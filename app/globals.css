@@ -1,15 +1,31 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── Tailwind v4: static theme values ────────────────────────────────────── */
+@theme {
+  /* Brand colours */
+  --color-primary:   #000000;
+  --color-secondary: #FFD700;
+  --color-accent:    #C0A080;
+
+  /* Custom animations */
+  --animate-fade-in:   fadeIn   0.5s ease-in-out;
+  --animate-slide-up:  slideUp  0.5s ease-out;
+  --animate-slide-down: slideDown 0.5s ease-out;
 }
 
+/* ─── Tailwind v4: CSS-var references (inline = re-evaluated at runtime) ──── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Fonts set by Next.js font loader on <html> */
+  --font-inter:    var(--font-inter);
+  --font-playfair: var(--font-playfair);
+}
+
+/* ─── CSS custom properties ───────────────────────────────────────────────── */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +35,91 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ─── Animation keyframes ─────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+/* ─── Base layer ──────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    font-family: var(--font-inter, Arial, Helvetica, sans-serif);
+  }
+}
+
+/* ─── Component utilities ─────────────────────────────────────────────────── */
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .heading-1 {
+    font-family: var(--font-playfair, Georgia, serif);
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    font-family: var(--font-playfair, Georgia, serif);
+    @apply text-3xl md:text-4xl font-bold tracking-tight;
+  }
+
+  .heading-3 {
+    @apply text-2xl md:text-3xl font-semibold;
+  }
+
+  .btn-primary {
+    @apply bg-black text-white px-6 py-3 rounded-lg font-semibold
+           hover:bg-gray-800 transition-all duration-300
+           focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-black text-black px-6 py-3 rounded-lg font-semibold
+           hover:bg-black hover:text-white transition-all duration-300
+           focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-lg overflow-hidden
+           hover:shadow-xl transition-shadow duration-300;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-black
+           focus:border-transparent transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+}
+
+/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 10px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* ─── Loader ──────────────────────────────────────────────────────────────── */
+.loader {
+  @apply w-12 h-12 border-4 border-gray-200 border-t-black rounded-full;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

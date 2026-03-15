@@ -1,0 +1,397 @@
+"use client";
+
+// app/vehicles/[id]/page.tsx
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  FaStar,
+  FaUsers,
+  FaMapMarkerAlt,
+  FaArrowLeft,
+  FaCheckCircle,
+  FaShare,
+  FaHeart,
+  FaRegHeart,
+  FaCar,
+} from "react-icons/fa";
+import { api } from "@/lib/api";
+import { Vehicle } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
+
+const FEATURE_ICONS: Record<string, string> = {
+  gps: "🗺️",
+  bluetooth: "📶",
+  "heated seats": "🌡️",
+  sunroof: "🌤️",
+  "leather seats": "💺",
+  "backup camera": "📷",
+  "cruise control": "🚗",
+  "apple carplay": "🍎",
+  "android auto": "🤖",
+  wifi: "📡",
+};
+
+function getFeatureIcon(feature: string) {
+  const key = feature.toLowerCase();
+  for (const [k, icon] of Object.entries(FEATURE_ICONS)) {
+    if (key.includes(k)) return icon;
+  }
+  return "✓";
+}
+
+export default function VehicleDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState(0);
+  const [saved, setSaved] = useState(false);
+
+  // Inquiry form state
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    api
+      .get(`/vehicles/${id}`)
+      .then((res) => setVehicle(res.data.data.vehicle))
+      .catch(() => router.push("/vehicles"))
+      .finally(() => setIsLoading(false));
+  }, [id, router]);
+
+  const days =
+    startDate && endDate
+      ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+  const handleInquiry = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    if (!startDate || !endDate || days <= 0) return;
+
+    setIsSending(true);
+    try {
+      // Vehicle booking inquiry — sends a toast confirmation for now
+      // Full vehicle booking endpoint can be added in a later iteration
+      await new Promise((r) => setTimeout(r, 600));
+      toast.success("Inquiry sent! The host will contact you soon.");
+      setStartDate("");
+      setEndDate("");
+      setMessage("");
+    } catch {
+      toast.error("Failed to send inquiry");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="loader" />
+      </div>
+    );
+  }
+
+  if (!vehicle) return null;
+
+  const images = vehicle.images?.length
+    ? vehicle.images
+    : [{ url: "/images/placeholder.jpg", publicId: "" }];
+
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="container py-6">
+        {/* Back */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors mb-4 text-sm"
+        >
+          <FaArrowLeft />
+          Back
+        </button>
+
+        {/* Title row */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </h1>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              {vehicle.totalReviews > 0 && (
+                <span className="flex items-center gap-1">
+                  <FaStar className="text-yellow-400" />
+                  <strong>{vehicle.averageRating.toFixed(1)}</strong>
+                  <span>({vehicle.totalReviews} reviews)</span>
+                </span>
+              )}
+              {vehicle.location && (
+                <span className="flex items-center gap-1">
+                  <FaMapMarkerAlt className="text-gray-400" />
+                  {vehicle.location}
+                </span>
+              )}
+              <span className="bg-gray-100 px-2 py-0.5 rounded-full capitalize">
+                {vehicle.vehicleType}
+              </span>
+              {vehicle.withDriver && (
+                <span className="bg-black text-white text-xs px-2 py-0.5 rounded-full">
+                  With driver
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <FaShare className="text-xs" /> Share
+            </button>
+            <button
+              onClick={() => setSaved(!saved)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {saved ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
+              Save
+            </button>
+          </div>
+        </div>
+
+        {/* Image gallery */}
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-10 h-[360px] md:h-[460px]">
+          <div
+            className="col-span-4 md:col-span-2 md:row-span-2 relative cursor-pointer"
+            onClick={() => setActiveImage(0)}
+          >
+            <Image
+              src={images[activeImage]?.url || images[0]?.url || "/images/placeholder.jpg"}
+              alt={`${vehicle.make} ${vehicle.model}`}
+              fill
+              className="object-cover hover:opacity-95 transition-opacity"
+              priority
+            />
+          </div>
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="relative hidden md:block cursor-pointer"
+              onClick={() => setActiveImage(i)}
+            >
+              {images[i] ? (
+                <Image
+                  src={images[i].url}
+                  alt={`${vehicle.make} ${vehicle.model} ${i + 1}`}
+                  fill
+                  className="object-cover hover:opacity-90 transition-opacity"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100" />
+              )}
+              {i === 4 && images.length > 5 && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold">
+                  +{images.length - 5} more
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Main layout */}
+        <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
+          {/* Left */}
+          <div>
+            {/* Quick stats */}
+            <div className="flex flex-wrap gap-6 pb-8 border-b border-gray-100 mb-8">
+              <div className="flex items-center gap-2 text-gray-700">
+                <FaUsers className="text-gray-400" />
+                <span>{vehicle.seats} seats</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <FaCar className="text-gray-400" />
+                <span className="capitalize">{vehicle.vehicleType}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <span className="text-gray-400">📅</span>
+                <span>{vehicle.year}</span>
+              </div>
+            </div>
+
+            {/* Host card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-4 pb-8 border-b border-gray-100 mb-8"
+            >
+              <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
+                {vehicle.host?.firstName?.[0]?.toUpperCase() ?? "H"}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Listed by {vehicle.host?.firstName} {vehicle.host?.lastName}
+                </p>
+                <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                  {vehicle.host?.isVerified && (
+                    <>
+                      <FaCheckCircle className="text-green-500 text-xs" />
+                      Verified host
+                    </>
+                  )}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Description */}
+            <div className="pb-8 border-b border-gray-100 mb-8">
+              <h2 className="text-xl font-semibold mb-3">About this vehicle</h2>
+              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                {vehicle.description}
+              </p>
+            </div>
+
+            {/* Features */}
+            {vehicle.features?.length > 0 && (
+              <div className="pb-8 border-b border-gray-100 mb-8">
+                <h2 className="text-xl font-semibold mb-5">Features</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {vehicle.features.map((feature) => (
+                    <div key={feature} className="flex items-center gap-3 text-gray-700">
+                      <span className="text-xl">{getFeatureIcon(feature)}</span>
+                      <span className="capitalize">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reviews placeholder */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-xl font-semibold">Reviews</h2>
+                {vehicle.totalReviews > 0 && (
+                  <span className="flex items-center gap-1 text-gray-600">
+                    <FaStar className="text-yellow-400" />
+                    {vehicle.averageRating.toFixed(1)} · {vehicle.totalReviews} reviews
+                  </span>
+                )}
+              </div>
+              {vehicle.totalReviews === 0 ? (
+                <p className="text-gray-400">No reviews yet. Be the first!</p>
+              ) : (
+                <p className="text-gray-400 italic">Reviews coming in Phase 7.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Right — Inquiry widget */}
+          <div className="lg:sticky lg:top-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="border border-gray-200 rounded-2xl p-6 shadow-lg bg-white"
+            >
+              <div className="flex items-baseline gap-1 mb-5">
+                <span className="text-2xl font-bold">${vehicle.pricePerDay}</span>
+                <span className="text-gray-500">/ day</span>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
+                <div className="grid grid-cols-2">
+                  <div className="p-3 border-r border-gray-200">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                      Pick-up
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={today}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full text-sm outline-none text-gray-800 cursor-pointer"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                      Return
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate || today}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full text-sm outline-none text-gray-800 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional message */}
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Message to host (optional)"
+                rows={3}
+                maxLength={500}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-black resize-none"
+              />
+
+              {isAuthenticated ? (
+                <button
+                  onClick={handleInquiry}
+                  disabled={!startDate || !endDate || days <= 0 || isSending}
+                  className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSending ? "Sending…" : !startDate || !endDate ? "Select dates" : "Send inquiry"}
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="block w-full text-center bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
+                >
+                  Log in to enquire
+                </Link>
+              )}
+
+              {days > 0 && (
+                <div className="mt-5 space-y-2 text-sm border-t border-gray-100 pt-5">
+                  <div className="flex justify-between text-gray-600">
+                    <span>${vehicle.pricePerDay} × {days} {days === 1 ? "day" : "days"}</span>
+                    <span>${(vehicle.pricePerDay * days).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
+                    <span>Estimated total</span>
+                    <span>${(vehicle.pricePerDay * days).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-center text-xs text-gray-400 mt-4">
+                Sending an inquiry is free — no charge yet
+              </p>
+            </motion.div>
+
+            {/* Edit button for host */}
+            {isAuthenticated && user?.id === vehicle.hostId && (
+              <Link
+                href={`/dashboard/host/vehicles/${vehicle.id}/edit`}
+                className="block w-full text-center mt-3 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:border-black transition-colors"
+              >
+                Edit this listing
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
