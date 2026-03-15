@@ -39,7 +39,7 @@ export default function HostDashboard() {
   useEffect(() => {
     if (!user) return;
     api
-      .get(`/properties?hostId=${user.id}`)
+      .get("/properties/mine")
       .then((res) => setProperties(res.data.data.properties))
       .catch(() => setProperties([]))
       .finally(() => setIsLoading(false));
@@ -83,7 +83,7 @@ export default function HostDashboard() {
   }
 
   const totalRevenue = properties.reduce((sum, p) => sum + Number(p.pricePerNight), 0);
-  const activeCount = properties.filter((p) => p.isAvailable).length;
+  const activeCount = properties.filter((p) => p.isAvailable && p.status === "approved").length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -182,6 +182,11 @@ export default function HostDashboard() {
                         <p className="text-sm text-gray-500 mt-0.5">
                           {property.location.city}, {property.location.country}
                         </p>
+                        {property.status === "rejected" && property.rejectionReason && (
+                          <p className="text-xs text-red-500 mt-0.5 italic">
+                            Reason: {property.rejectionReason}
+                          </p>
+                        )}
                         <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
                           <span className="font-semibold text-gray-900">
                             ${property.pricePerNight}/night
@@ -199,12 +204,22 @@ export default function HostDashboard() {
                       {/* Status badge */}
                       <span
                         className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-                          property.isAvailable
+                          property.status === "approved" && property.isAvailable
                             ? "bg-green-100 text-green-700"
+                            : property.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : property.status === "rejected"
+                            ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-500"
                         }`}
                       >
-                        {property.isAvailable ? "Listed" : "Hidden"}
+                        {property.status === "approved" && property.isAvailable
+                          ? "Live"
+                          : property.status === "approved" && !property.isAvailable
+                          ? "Hidden"
+                          : property.status === "pending"
+                          ? "Pending review"
+                          : "Not approved"}
                       </span>
                     </div>
                   </div>

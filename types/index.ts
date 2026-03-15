@@ -41,6 +41,8 @@ export interface Property {
     longitude?: number;
   };
   isAvailable: boolean;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
   host: User;
   hostId: string;
   images: Image[];

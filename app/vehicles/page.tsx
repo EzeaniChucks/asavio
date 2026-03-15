@@ -11,11 +11,14 @@ import { Vehicle } from "@/types";
 import VehicleCard from "@/components/cards/VehicleCard";
 import PropertySkeleton from "@/components/ui/PropertySkeleton";
 
-const VEHICLE_TYPES = ["sedan", "suv", "sports", "luxury", "van", "pickup", "convertible", "electric"];
 const TYPE_LABELS: Record<string, string> = {
   sedan: "Sedan", suv: "SUV", sports: "Sports", luxury: "Luxury",
   van: "Van", pickup: "Pickup", convertible: "Convertible", electric: "Electric",
 };
+
+function labelFor(type: string): string {
+  return TYPE_LABELS[type.toLowerCase()] ?? (type.charAt(0).toUpperCase() + type.slice(1));
+}
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest first" },
@@ -32,6 +35,14 @@ function VehiclesContent() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<string[]>([]);
+
+  // Load available vehicle types from DB once
+  useEffect(() => {
+    api.get("/vehicles/types").then((res) => {
+      setVehicleTypes(res.data.data.types ?? []);
+    }).catch(() => {});
+  }, []);
 
   // Filter state — synced to URL
   const activeType = searchParams.get("vehicleType") ?? "";
@@ -109,7 +120,7 @@ function VehiclesContent() {
             />
           </div>
 
-          {/* Type pills */}
+          {/* Type pills — dynamically populated from DB */}
           <div className="flex gap-1.5 overflow-x-auto flex-nowrap pb-0.5">
             <button
               onClick={() => setParam("vehicleType", "")}
@@ -119,15 +130,15 @@ function VehiclesContent() {
             >
               All
             </button>
-            {VEHICLE_TYPES.map((t) => (
+            {vehicleTypes.map((t) => (
               <button
                 key={t}
                 onClick={() => setParam("vehicleType", activeType === t ? "" : t)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors capitalize ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   activeType === t ? "bg-black text-white" : "bg-white border border-gray-200 text-gray-700 hover:border-gray-400"
                 }`}
               >
-                {TYPE_LABELS[t]}
+                {labelFor(t)}
               </button>
             ))}
           </div>

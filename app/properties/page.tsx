@@ -17,17 +17,8 @@ import PropertySkeleton from "@/components/ui/PropertySkeleton";
 import { api } from "@/lib/api";
 import { Property, PropertyFilters } from "@/types";
 
-const PROPERTY_TYPES = [
-  "All",
-  "Apartment",
-  "Villa",
-  "Beach House",
-  "Penthouse",
-  "Studio",
-  "Cabin",
-  "Entire Home",
-  "Townhouse",
-];
+// Static fallback — replaced at runtime with DB-sourced types
+const FALLBACK_TYPES: string[] = [];
 
 const SORT_OPTIONS = [
   { label: "Newest first", value: "newest" },
@@ -70,9 +61,18 @@ function PropertiesContent() {
   });
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [propertyTypes, setPropertyTypes] = useState<string[]>(FALLBACK_TYPES);
   const [isLoading, setIsLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cityInput, setCityInput] = useState(filters.city || "");
+
+  // Load available property types from DB once
+  useEffect(() => {
+    api.get("/properties/types").then((res) => {
+      const types: string[] = res.data.data.types ?? [];
+      setPropertyTypes(types);
+    }).catch(() => {});
+  }, []);
 
   const fetchProperties = useCallback(async (f: typeof filters) => {
     setIsLoading(true);
@@ -151,19 +151,29 @@ function PropertiesContent() {
             )}
           </div>
 
-          {/* Type pills */}
+          {/* Type pills — dynamically populated from DB */}
           <div className="flex gap-2 flex-shrink-0">
-            {PROPERTY_TYPES.map((type) => (
+            <button
+              onClick={() => applyType("All")}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                filters.propertyType === "All" || !filters.propertyType
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              All
+            </button>
+            {propertyTypes.map((type) => (
               <button
                 key={type}
                 onClick={() => applyType(type)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  filters.propertyType === type
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors capitalize ${
+                  filters.propertyType?.toLowerCase() === type.toLowerCase()
                     ? "bg-black text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {type}
+                {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>

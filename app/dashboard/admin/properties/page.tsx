@@ -15,11 +15,23 @@ import {
   FaChevronRight,
   FaToggleOn,
   FaToggleOff,
+  FaEdit,
+  FaCheck,
+  FaTimes,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
 import toast from "react-hot-toast";
+
+type StatusFilter = "all" | "pending" | "approved" | "rejected";
+
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "approved", label: "Approved" },
+  { key: "rejected", label: "Rejected" },
+];
 
 export default function AdminPropertiesPage() {
   const router = useRouter();
@@ -28,10 +40,13 @@ export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Property | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const LIMIT = 20;
 
@@ -47,6 +62,7 @@ export default function AdminPropertiesPage() {
     try {
       const params: Record<string, string | number> = { page, limit: LIMIT };
       if (search.trim()) params.search = search.trim();
+      if (statusFilter !== "all") params.status = statusFilter;
       const res = await api.get("/admin/properties", { params });
       const data = res.data.data ?? res.data;
       setProperties(data.properties ?? data);
@@ -56,7 +72,7 @@ export default function AdminPropertiesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, page, search]);
+  }, [user, page, search, statusFilter]);
 
   useEffect(() => {
     fetchProperties();
@@ -64,7 +80,30 @@ export default function AdminPropertiesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, statusFilter]);
+
+  async function setStatus(p: Property, status: "approved" | "rejected", reason?: string) {
+    setActionLoading(p.id + "-" + status);
+    try {
+      await api.patch(`/admin/properties/${p.id}`, {
+        status,
+        ...(status === "approved" ? { isAvailable: true } : {}),
+        ...(reason ? { rejectionReason: reason } : {}),
+      });
+      toast.success(
+        status === "approved"
+          ? `"${p.title}" approved and is now live`
+          : `"${p.title}" rejected`
+      );
+      fetchProperties();
+    } catch {
+      // handled
+    } finally {
+      setActionLoading(null);
+      setRejectTarget(null);
+      setRejectionReason("");
+    }
+  }
 
   async function toggleAvailability(p: Property) {
     setActionLoading(p.id + "-toggle");
@@ -104,6 +143,14 @@ export default function AdminPropertiesPage() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
+  const statusBadge = (p: Property) => {
+    if (p.status === "approved")
+      return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Approved</span>;
+    if (p.status === "rejected")
+      return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">Rejected</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>;
+  };
+
   if (authLoading || !user || user.role !== "admin") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -128,7 +175,7 @@ export default function AdminPropertiesPage() {
               <h1 className="text-xl font-bold text-gray-900">
                 Property Management
               </h1>
-              <p className="text-xs text-gray-400 mt-0.5">{total} total properties</p>
+              <p className="text-xs text-gray-400 mt-0.5">{total} {statusFilter === "all" ? "total" : statusFilter} properties</p>
             </div>
           </div>
           <Link
@@ -137,6 +184,23 @@ export default function AdminPropertiesPage() {
           >
             + New listing
           </Link>
+        </div>
+
+        {/* Status tabs */}
+        <div className="flex gap-1 bg-white rounded-2xl border border-gray-100 p-1.5 mb-4">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors ${
+                statusFilter === tab.key
+                  ? "bg-black text-white"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Search */}
@@ -165,7 +229,7 @@ export default function AdminPropertiesPage() {
           </div>
         ) : properties.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400 text-sm">
-            No properties found.
+            No {statusFilter === "all" ? "" : statusFilter + " "}properties found.
           </div>
         ) : (
           <motion.div
@@ -198,16 +262,7 @@ export default function AdminPropertiesPage() {
                           🏠
                         </div>
                       )}
-                      {/* Availability badge */}
-                      <span
-                        className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          p.isAvailable
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-100 text-red-600"
-                        }`}
-                      >
-                        {p.isAvailable ? "Available" : "Unavailable"}
-                      </span>
+                      <div className="absolute top-2 right-2">{statusBadge(p)}</div>
                     </div>
 
                     {/* Info */}
@@ -224,6 +279,11 @@ export default function AdminPropertiesPage() {
                           {p.host?.firstName} {p.host?.lastName}
                         </span>
                       </p>
+                      {p.status === "rejected" && p.rejectionReason && (
+                        <p className="text-xs text-red-500 mt-1 italic line-clamp-2">
+                          Reason: {p.rejectionReason}
+                        </p>
+                      )}
                       <p className="text-sm font-bold text-gray-900 mt-1">
                         ${p.pricePerNight}
                         <span className="text-xs font-normal text-gray-400">
@@ -232,44 +292,76 @@ export default function AdminPropertiesPage() {
                       </p>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                        {/* Toggle availability */}
-                        <button
-                          onClick={() => toggleAvailability(p)}
-                          disabled={actionLoading === p.id + "-toggle"}
-                          title={
-                            p.isAvailable
-                              ? "Mark unavailable"
-                              : "Mark available"
-                          }
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
-                        >
-                          {p.isAvailable ? (
-                            <FaToggleOn className="text-emerald-500 text-base" />
-                          ) : (
-                            <FaToggleOff className="text-gray-400 text-base" />
-                          )}
-                          {p.isAvailable ? "Disable" : "Enable"}
-                        </button>
+                      <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100 flex-wrap">
+                        {/* Approve */}
+                        {p.status !== "approved" && (
+                          <button
+                            onClick={() => setStatus(p, "approved")}
+                            disabled={actionLoading === p.id + "-approved"}
+                            title="Approve listing"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 disabled:opacity-40 transition"
+                          >
+                            <FaCheck className="text-[10px]" /> Approve
+                          </button>
+                        )}
 
-                        {/* View */}
-                        <Link
-                          href={`/properties/${p.id}`}
-                          target="_blank"
-                          className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition ml-auto"
-                          title="View listing"
-                        >
-                          <FaExternalLinkAlt className="text-xs" />
-                        </Link>
+                        {/* Reject */}
+                        {p.status !== "rejected" && (
+                          <button
+                            onClick={() => { setRejectTarget(p); setRejectionReason(""); }}
+                            title="Reject listing"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 transition"
+                          >
+                            <FaTimes className="text-[10px]" /> Reject
+                          </button>
+                        )}
 
-                        {/* Delete */}
-                        <button
-                          onClick={() => setDeleteTarget(p.id)}
-                          title="Delete property"
-                          className="w-8 h-8 rounded-lg border border-red-100 text-red-400 hover:bg-red-50 flex items-center justify-center transition"
-                        >
-                          <FaTrash className="text-xs" />
-                        </button>
+                        {/* Toggle availability (approved only) */}
+                        {p.status === "approved" && (
+                          <button
+                            onClick={() => toggleAvailability(p)}
+                            disabled={actionLoading === p.id + "-toggle"}
+                            title={p.isAvailable ? "Hide listing" : "Show listing"}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
+                          >
+                            {p.isAvailable ? (
+                              <FaToggleOn className="text-emerald-500 text-sm" />
+                            ) : (
+                              <FaToggleOff className="text-gray-400 text-sm" />
+                            )}
+                            {p.isAvailable ? "Hide" : "Show"}
+                          </button>
+                        )}
+
+                        <div className="ml-auto flex items-center gap-1">
+                          {/* Edit */}
+                          <Link
+                            href={`/dashboard/host/properties/${p.id}/edit`}
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="Edit listing"
+                          >
+                            <FaEdit className="text-xs" />
+                          </Link>
+
+                          {/* View */}
+                          <Link
+                            href={`/properties/${p.id}`}
+                            target="_blank"
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="View listing"
+                          >
+                            <FaExternalLinkAlt className="text-xs" />
+                          </Link>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() => setDeleteTarget(p.id)}
+                            title="Delete property"
+                            className="w-8 h-8 rounded-lg border border-red-100 text-red-400 hover:bg-red-50 flex items-center justify-center transition"
+                          >
+                            <FaTrash className="text-xs" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -304,6 +396,50 @@ export default function AdminPropertiesPage() {
           </div>
         )}
       </div>
+
+      {/* Reject modal */}
+      <AnimatePresence>
+        {rejectTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+            >
+              <h3 className="font-bold text-gray-900 text-base mb-1">Reject listing?</h3>
+              <p className="text-sm text-gray-500 mb-4 truncate">{rejectTarget.title}</p>
+              <textarea
+                placeholder="Reason for rejection (optional — sent to the host)"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 resize-none mb-4"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setRejectTarget(null); setRejectionReason(""); }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setStatus(rejectTarget, "rejected", rejectionReason || undefined)}
+                  disabled={!!actionLoading}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition"
+                >
+                  Reject
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete confirm */}
       <AnimatePresence>
