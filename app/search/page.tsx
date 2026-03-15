@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaMapMarkerAlt, FaUsers, FaCalendarAlt } from "react-icons/fa";
 import PropertyCard from "@/components/cards/PropertyCard";
+import { Suspense } from "react";
 import PropertySkeleton from "@/components/ui/PropertySkeleton";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
@@ -20,7 +21,7 @@ function formatDate(iso: string | null) {
   });
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
 
   const location = searchParams.get("location") || "";
@@ -134,5 +135,17 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

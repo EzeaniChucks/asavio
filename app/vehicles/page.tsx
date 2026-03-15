@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaSearch, FaSlidersH, FaTimes } from "react-icons/fa";
+import { Suspense } from "react";
 import { api } from "@/lib/api";
 import { Vehicle } from "@/types";
 import VehicleCard from "@/components/cards/VehicleCard";
@@ -23,7 +24,7 @@ const SORT_OPTIONS = [
   { value: "rating", label: "Top rated" },
 ];
 
-export default function VehiclesPage() {
+function VehiclesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -286,5 +287,17 @@ export default function VehiclesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function VehiclesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <VehiclesContent />
+    </Suspense>
   );
 }

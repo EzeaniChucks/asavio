@@ -11,6 +11,7 @@ import {
   FaSlidersH,
   FaChevronDown,
 } from "react-icons/fa";
+import { Suspense } from "react";
 import PropertyCard from "@/components/cards/PropertyCard";
 import PropertySkeleton from "@/components/ui/PropertySkeleton";
 import { api } from "@/lib/api";
@@ -48,7 +49,7 @@ function buildQuery(filters: PropertyFilters & { sort?: string }) {
   return params.toString();
 }
 
-export default function PropertiesPage() {
+function PropertiesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -369,5 +370,17 @@ export default function PropertiesPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function PropertiesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <PropertiesContent />
+    </Suspense>
   );
 }
