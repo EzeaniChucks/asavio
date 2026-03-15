@@ -1,6 +1,7 @@
 "use client";
 
 // components/home/LuxuryVehicles.tsx
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaArrowRight, FaCar } from "react-icons/fa";
@@ -10,33 +11,29 @@ const vehicleShowcase = [
     type: "Sedan",
     example: "Mercedes S-Class",
     price: 250,
-    emoji: "🚗",
+    image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&q=80",
     features: ["Chauffeur available", "GPS", "Wi-Fi"],
-    bg: "bg-gray-900",
   },
   {
     type: "SUV",
     example: "Range Rover Vogue",
     price: 350,
-    emoji: "🚙",
+    image: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=600&q=80",
     features: ["7 seats", "Off-road capable", "Panoramic roof"],
-    bg: "bg-zinc-800",
   },
   {
     type: "Sports",
     example: "Lamborghini Huracán",
     price: 900,
-    emoji: "🏎️",
+    image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&q=80",
     features: ["V10 engine", "Track mode", "Carbon interior"],
-    bg: "bg-neutral-900",
   },
   {
     type: "MPV / Van",
     example: "Mercedes V-Class",
     price: 300,
-    emoji: "🚐",
+    image: "https://images.unsplash.com/photo-1614026480418-bd11fdb9fa06?w=600&q=80",
     features: ["8 seats", "Airport transfers", "Executive spec"],
-    bg: "bg-stone-800",
   },
 ];
 
@@ -76,29 +73,42 @@ export default function LuxuryVehicles() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`${vehicle.bg} rounded-2xl p-6 min-w-[260px] md:min-w-0 flex-shrink-0 md:flex-shrink snap-start border border-white/10 hover:border-secondary/50 transition-colors group cursor-pointer`}
+              className="bg-gray-900 rounded-2xl min-w-[260px] md:min-w-0 flex-shrink-0 md:flex-shrink snap-start border border-white/10 hover:border-secondary/50 transition-colors group cursor-pointer overflow-hidden"
             >
-              <div className="text-5xl mb-5">{vehicle.emoji}</div>
-              <p className="text-secondary text-xs font-semibold uppercase tracking-widest mb-1">
-                {vehicle.type}
-              </p>
-              <h3 className="text-white font-semibold text-lg mb-4 leading-tight">
-                {vehicle.example}
-              </h3>
-              <ul className="space-y-1.5 mb-6">
-                {vehicle.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-gray-400 text-sm">
-                    <span className="w-1 h-1 rounded-full bg-secondary flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-white font-bold text-xl">${vehicle.price}</span>
-                  <span className="text-gray-500 text-sm"> / day</span>
+              {/* Vehicle photo */}
+              <div className="relative h-44 w-full">
+                <Image
+                  src={vehicle.image}
+                  alt={vehicle.example}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 260px, 25vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+              </div>
+
+              <div className="p-6">
+                <p className="text-secondary text-xs font-semibold uppercase tracking-widest mb-1">
+                  {vehicle.type}
+                </p>
+                <h3 className="text-white font-semibold text-lg mb-4 leading-tight">
+                  {vehicle.example}
+                </h3>
+                <ul className="space-y-1.5 mb-6">
+                  {vehicle.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-gray-400 text-sm">
+                      <span className="w-1 h-1 rounded-full bg-secondary flex-shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-white font-bold text-xl">${vehicle.price}</span>
+                    <span className="text-gray-500 text-sm"> / day</span>
+                  </div>
+                  <FaCar className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <FaCar className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </motion.div>
           ))}

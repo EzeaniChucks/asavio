@@ -1,26 +1,55 @@
 "use client";
 
 // components/home/Categories.tsx
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 const categories = [
-  { label: "Apartments", icon: "🏢", type: "apartment" },
-  { label: "Villas", icon: "🏡", type: "villa" },
-  { label: "Beach Houses", icon: "🏖️", type: "beach house" },
-  { label: "Penthouses", icon: "🌆", type: "penthouse" },
-  { label: "Studios", icon: "🛋️", type: "studio" },
-  { label: "Cabins", icon: "🪵", type: "cabin" },
-  { label: "Entire Homes", icon: "🏠", type: "entire home" },
-  { label: "Townhouses", icon: "🏘️", type: "townhouse" },
+  {
+    label: "Apartments",
+    type: "apartment",
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80",
+  },
+  {
+    label: "Villas",
+    type: "villa",
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80",
+  },
+  {
+    label: "Beach Houses",
+    type: "beach house",
+    image: "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=400&q=80",
+  },
+  {
+    label: "Penthouses",
+    type: "penthouse",
+    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&q=80",
+  },
+  {
+    label: "Studios",
+    type: "studio",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80",
+  },
+  {
+    label: "Cabins",
+    type: "cabin",
+    image: "https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=400&q=80",
+  },
+  {
+    label: "Entire Homes",
+    type: "entire home",
+    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=80",
+  },
+  {
+    label: "Townhouses",
+    type: "townhouse",
+    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=80",
+  },
 ];
 
 export default function Categories() {
   const router = useRouter();
-
-  const handleCategory = (type: string) => {
-    router.push(`/properties?propertyType=${encodeURIComponent(type)}`);
-  };
 
   return (
     <section className="py-16 bg-gray-50">
@@ -38,7 +67,7 @@ export default function Categories() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {categories.map((cat, i) => (
             <motion.button
               key={cat.type}
@@ -46,13 +75,23 @@ export default function Categories() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              onClick={() => handleCategory(cat.type)}
-              className="group flex flex-col items-center gap-3 p-4 rounded-2xl bg-white border border-gray-100 hover:border-black hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => router.push(`/properties?propertyType=${encodeURIComponent(cat.type)}`)}
+              className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer"
             >
-              <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
-                {cat.icon}
-              </span>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-black">
+              {/* Photo */}
+              <Image
+                src={cat.image}
+                alt={cat.label}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12.5vw"
+              />
+
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+              {/* Label */}
+              <span className="absolute bottom-0 left-0 right-0 px-3 py-3 text-white text-xs font-semibold text-center leading-tight">
                 {cat.label}
               </span>
             </motion.button>
