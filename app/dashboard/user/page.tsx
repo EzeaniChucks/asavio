@@ -22,14 +22,14 @@ import { Booking } from "@/types";
 import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
+  awaiting_payment: "bg-orange-100 text-orange-800",
   confirmed: "bg-green-100 text-green-800",
   completed: "bg-blue-100 text-blue-800",
   cancelled: "bg-red-100 text-red-700",
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
-  pending: <FaClock className="text-yellow-500" />,
+  awaiting_payment: <FaClock className="text-orange-500" />,
   confirmed: <FaCheckCircle className="text-green-500" />,
   completed: <FaTrophy className="text-blue-500" />,
   cancelled: <FaTimesCircle className="text-red-500" />,
@@ -90,7 +90,7 @@ export default function UserDashboard() {
 
   const stats = {
     total: bookings.length,
-    upcoming: bookings.filter((b) => b.status === "confirmed" || b.status === "pending").length,
+    upcoming: bookings.filter((b) => b.status === "confirmed" || b.status === "awaiting_payment").length,
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
   };

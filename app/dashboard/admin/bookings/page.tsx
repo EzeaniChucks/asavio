@@ -21,20 +21,20 @@ import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import toast from "react-hot-toast";
 
-type StatusFilter = "all" | "pending" | "confirmed" | "completed" | "cancelled";
+type StatusFilter = "all" | "awaiting_payment" | "confirmed" | "completed" | "cancelled";
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
+  { label: "Awaiting payment", value: "awaiting_payment" },
   { label: "Confirmed", value: "confirmed" },
   { label: "Completed", value: "completed" },
   { label: "Cancelled", value: "cancelled" },
 ];
 
 const STATUS_STYLES: Record<string, { badge: string; icon: React.ReactNode }> = {
-  pending: {
-    badge: "bg-yellow-100 text-yellow-700",
-    icon: <FaClock className="text-yellow-500 text-xs" />,
+  awaiting_payment: {
+    badge: "bg-orange-100 text-orange-700",
+    icon: <FaClock className="text-orange-500 text-xs" />,
   },
   confirmed: {
     badge: "bg-green-100 text-green-700",
@@ -184,7 +184,7 @@ export default function AdminBookingsPage() {
               {bookings.map((b) => {
                 const nights = nightsBetween(b.checkIn, b.checkOut);
                 const statusStyle =
-                  STATUS_STYLES[b.status] ?? STATUS_STYLES["pending"];
+                  STATUS_STYLES[b.status] ?? STATUS_STYLES["awaiting_payment"];
                 return (
                   <motion.div
                     key={b.id}
@@ -231,7 +231,7 @@ export default function AdminBookingsPage() {
 
                       {/* Actions */}
                       <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
-                        {b.status === "pending" && (
+                        {b.status === "awaiting_payment" && (
                           <>
                             <button
                               onClick={() => updateStatus(b.id, "confirmed")}

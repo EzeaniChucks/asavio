@@ -18,11 +18,10 @@ import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import toast from "react-hot-toast";
 
-type Tab = "all" | "awaiting_payment" | "pending" | "confirmed" | "completed" | "cancelled";
+type Tab = "all" | "awaiting_payment" | "confirmed" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
   awaiting_payment: { label: "Awaiting payment", classes: "bg-orange-100 text-orange-800" },
-  pending:          { label: "Pending",           classes: "bg-yellow-100 text-yellow-800" },
   confirmed:        { label: "Confirmed",         classes: "bg-green-100  text-green-800"  },
   completed:        { label: "Completed",         classes: "bg-blue-100   text-blue-800"   },
   cancelled:        { label: "Cancelled",         classes: "bg-red-100    text-red-700"    },
@@ -89,7 +88,7 @@ export default function BookingsPage() {
     }
   };
 
-  const tabs: Tab[] = ["all", "awaiting_payment", "pending", "confirmed", "completed", "cancelled"];
+  const tabs: Tab[] = ["all", "awaiting_payment", "confirmed", "completed", "cancelled"];
 
   const filtered =
     activeTab === "all" ? bookings : bookings.filter((b) => b.status === activeTab);
@@ -164,9 +163,9 @@ export default function BookingsPage() {
           <div className="space-y-4">
             {filtered.map((booking, i) => {
               const nights = nightCount(String(booking.checkIn), String(booking.checkOut));
-              const cfg = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.pending;
-              const canCancel = booking.status === "pending" || booking.status === "confirmed" || booking.status === "awaiting_payment";
-              const canPayNow = booking.status === "awaiting_payment" && booking.paymentMethod === "paystack";
+              const cfg = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.confirmed;
+              const canCancel = booking.status === "confirmed" || booking.status === "awaiting_payment";
+              const canPayNow = booking.status === "awaiting_payment";
 
               return (
                 <motion.div
