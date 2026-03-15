@@ -8,13 +8,15 @@ import CTASection from "@/components/home/CTASection";
 
 export default function Home() {
   return (
-    <div className="overflow-hidden">
+    <div>
       <Hero />
-      <Categories />
-      <FeaturedProperties />
-      <LuxuryVehicles />
-      <ExperienceSection />
-      <CTASection />
+      <div className="overflow-hidden">
+        <Categories />
+        <FeaturedProperties />
+        <LuxuryVehicles />
+        <ExperienceSection />
+        <CTASection />
+      </div>
     </div>
   );
 }

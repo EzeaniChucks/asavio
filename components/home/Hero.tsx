@@ -6,7 +6,7 @@ import SearchBar from "../ui/SearchBar";
 
 export default function Hero() {
   return (
-    <section className="relative h-screen min-h-[600px] flex items-center justify-center -mt-16 md:-mt-20">
+    <section className="relative h-screen min-h-[600px] flex items-center justify-center -mt-16 md:-mt-20 bg-gray-900">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
