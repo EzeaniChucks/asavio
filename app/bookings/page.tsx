@@ -11,22 +11,21 @@ import {
   FaUsers,
   FaArrowRight,
   FaTimes,
+  FaCreditCard,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import toast from "react-hot-toast";
 
-type Tab = "all" | "pending" | "confirmed" | "completed" | "cancelled";
+type Tab = "all" | "awaiting_payment" | "pending" | "confirmed" | "completed" | "cancelled";
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; classes: string }
-> = {
-  pending:   { label: "Pending",   classes: "bg-yellow-100 text-yellow-800" },
-  confirmed: { label: "Confirmed", classes: "bg-green-100  text-green-800"  },
-  completed: { label: "Completed", classes: "bg-blue-100   text-blue-800"   },
-  cancelled: { label: "Cancelled", classes: "bg-red-100    text-red-700"    },
+const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
+  awaiting_payment: { label: "Awaiting payment", classes: "bg-orange-100 text-orange-800" },
+  pending:          { label: "Pending",           classes: "bg-yellow-100 text-yellow-800" },
+  confirmed:        { label: "Confirmed",         classes: "bg-green-100  text-green-800"  },
+  completed:        { label: "Completed",         classes: "bg-blue-100   text-blue-800"   },
+  cancelled:        { label: "Cancelled",         classes: "bg-red-100    text-red-700"    },
 };
 
 function formatDateRange(checkIn: string, checkOut: string) {
@@ -48,6 +47,7 @@ export default function BookingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [payingNow, setPayingNow] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -61,6 +61,17 @@ export default function BookingsPage() {
       .catch(() => setBookings([]))
       .finally(() => setIsLoading(false));
   }, [user]);
+
+  const handlePayNow = async (bookingId: string) => {
+    setPayingNow(bookingId);
+    try {
+      const res = await api.post("/payments/initialize", { bookingId });
+      window.location.href = res.data.data.authorization_url;
+    } catch {
+      toast.error("Could not initialize payment. Please try again.");
+      setPayingNow(null);
+    }
+  };
 
   const handleCancel = async (id: string) => {
     if (!confirm("Cancel this booking?")) return;
@@ -78,7 +89,7 @@ export default function BookingsPage() {
     }
   };
 
-  const tabs: Tab[] = ["all", "pending", "confirmed", "completed", "cancelled"];
+  const tabs: Tab[] = ["all", "awaiting_payment", "pending", "confirmed", "completed", "cancelled"];
 
   const filtered =
     activeTab === "all" ? bookings : bookings.filter((b) => b.status === activeTab);
@@ -119,7 +130,7 @@ export default function BookingsPage() {
                   : "text-gray-500 hover:text-black hover:bg-gray-50"
               }`}
             >
-              <span className="capitalize">{tab === "all" ? "All" : STATUS_CONFIG[tab].label}</span>
+              <span className="capitalize">{tab === "all" ? "All" : STATUS_CONFIG[tab]?.label ?? tab}</span>
               {counts[tab] > 0 && (
                 <span
                   className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
@@ -153,8 +164,9 @@ export default function BookingsPage() {
           <div className="space-y-4">
             {filtered.map((booking, i) => {
               const nights = nightCount(String(booking.checkIn), String(booking.checkOut));
-              const cfg = STATUS_CONFIG[booking.status];
-              const canCancel = booking.status === "pending" || booking.status === "confirmed";
+              const cfg = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.pending;
+              const canCancel = booking.status === "pending" || booking.status === "confirmed" || booking.status === "awaiting_payment";
+              const canPayNow = booking.status === "awaiting_payment" && booking.paymentMethod === "paystack";
 
               return (
                 <motion.div
@@ -228,16 +240,29 @@ export default function BookingsPage() {
                       <FaArrowRight className="text-xs" />
                     </Link>
 
-                    {canCancel && (
-                      <button
-                        onClick={() => handleCancel(booking.id)}
-                        disabled={cancelling === booking.id}
-                        className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
-                      >
-                        <FaTimes className="text-xs" />
-                        {cancelling === booking.id ? "Cancelling…" : "Cancel"}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {canPayNow && (
+                        <button
+                          onClick={() => handlePayNow(booking.id)}
+                          disabled={payingNow === booking.id}
+                          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-black px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        >
+                          <FaCreditCard className="text-xs" />
+                          {payingNow === booking.id ? "Redirecting…" : "Pay now"}
+                        </button>
+                      )}
+
+                      {canCancel && (
+                        <button
+                          onClick={() => handleCancel(booking.id)}
+                          disabled={cancelling === booking.id}
+                          className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
+                        >
+                          <FaTimes className="text-xs" />
+                          {cancelling === booking.id ? "Cancelling…" : "Cancel"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );

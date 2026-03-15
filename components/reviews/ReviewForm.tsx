@@ -7,11 +7,12 @@ import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface ReviewFormProps {
-  propertyId: string;
+  propertyId?: string;
+  vehicleId?: string;
   onSuccess: () => void;
 }
 
-export default function ReviewForm({ propertyId, onSuccess }: ReviewFormProps) {
+export default function ReviewForm({ propertyId, vehicleId, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
@@ -24,7 +25,7 @@ export default function ReviewForm({ propertyId, onSuccess }: ReviewFormProps) {
 
     setIsSubmitting(true);
     try {
-      await api.post("/reviews", { propertyId, rating, comment });
+      await api.post("/reviews", { propertyId, vehicleId, rating, comment });
       toast.success("Review submitted!");
       setRating(0);
       setComment("");

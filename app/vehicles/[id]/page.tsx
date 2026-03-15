@@ -16,11 +16,15 @@ import {
   FaHeart,
   FaRegHeart,
   FaCar,
+  FaExpand,
 } from "react-icons/fa";
 import { api } from "@/lib/api";
-import { Vehicle } from "@/types";
+import { Vehicle, Review } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import ReviewList from "@/components/reviews/ReviewList";
+import ReviewForm from "@/components/reviews/ReviewForm";
+import GalleryLightbox from "@/components/ui/GalleryLightbox";
 
 const FEATURE_ICONS: Record<string, string> = {
   gps: "🗺️",
@@ -50,8 +54,12 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  // Gallery / lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activeThumb, setActiveThumb] = useState(0);
 
   // Inquiry form state
   const [startDate, setStartDate] = useState("");
@@ -69,27 +77,28 @@ export default function VehicleDetailPage() {
       .finally(() => setIsLoading(false));
   }, [id, router]);
 
+  useEffect(() => {
+    if (!id) return;
+    api
+      .get(`/reviews/vehicle/${id}`)
+      .then((res) => setReviews(res.data.data.reviews ?? []))
+      .catch(() => {});
+  }, [id]);
+
   const days =
     startDate && endDate
       ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
   const handleInquiry = async () => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    if (!isAuthenticated) { router.push("/login"); return; }
     if (!startDate || !endDate || days <= 0) return;
 
     setIsSending(true);
     try {
-      // Vehicle booking inquiry — sends a toast confirmation for now
-      // Full vehicle booking endpoint can be added in a later iteration
       await new Promise((r) => setTimeout(r, 600));
       toast.success("Inquiry sent! The host will contact you soon.");
-      setStartDate("");
-      setEndDate("");
-      setMessage("");
+      setStartDate(""); setEndDate(""); setMessage("");
     } catch {
       toast.error("Failed to send inquiry");
     } finally {
@@ -133,8 +142,8 @@ export default function VehicleDetailPage() {
               {vehicle.totalReviews > 0 && (
                 <span className="flex items-center gap-1">
                   <FaStar className="text-yellow-400" />
-                  <strong>{vehicle.averageRating.toFixed(1)}</strong>
-                  <span>({vehicle.totalReviews} reviews)</span>
+                  <strong>{Number(vehicle.averageRating).toFixed(1)}</strong>
+                  <span>({vehicle.totalReviews} {vehicle.totalReviews === 1 ? "review" : "reviews"})</span>
                 </span>
               )}
               {vehicle.location && (
@@ -170,42 +179,69 @@ export default function VehicleDetailPage() {
 
         {/* Image gallery */}
         <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-10 h-[360px] md:h-[460px]">
+          {/* Main image — spans full width on mobile (2 rows), left half on desktop */}
           <div
-            className="col-span-4 md:col-span-2 md:row-span-2 relative cursor-pointer"
-            onClick={() => setActiveImage(0)}
+            className="col-span-4 row-span-2 md:col-span-2 relative cursor-pointer group"
+            onClick={() => setLightboxIndex(0)}
           >
             <Image
-              src={images[activeImage]?.url || images[0]?.url || "/images/placeholder.jpg"}
+              src={images[activeThumb]?.url || images[0]?.url || "/images/placeholder.jpg"}
               alt={`${vehicle.make} ${vehicle.model}`}
               fill
-              className="object-cover hover:opacity-95 transition-opacity"
+              className="object-cover group-hover:opacity-95 transition-opacity"
               priority
             />
+            <div className="absolute inset-0 flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="flex items-center gap-1.5 bg-black/60 text-white text-xs px-2.5 py-1.5 rounded-lg">
+                <FaExpand className="text-xs" /> View all {images.length} photos
+              </span>
+            </div>
           </div>
+
+          {/* Secondary thumbnails — hidden on mobile */}
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="relative hidden md:block cursor-pointer"
-              onClick={() => setActiveImage(i)}
+              className={`relative hidden md:block ${images[i] ? "cursor-pointer group" : ""}`}
+              onClick={() => images[i] && setLightboxIndex(i)}
             >
               {images[i] ? (
-                <Image
-                  src={images[i].url}
-                  alt={`${vehicle.make} ${vehicle.model} ${i + 1}`}
-                  fill
-                  className="object-cover hover:opacity-90 transition-opacity"
-                />
+                <>
+                  <Image
+                    src={images[i].url}
+                    alt={`${vehicle.make} ${vehicle.model} ${i + 1}`}
+                    fill
+                    className="object-cover group-hover:opacity-90 transition-opacity"
+                  />
+                  {i === 4 && images.length > 5 && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold">
+                      +{images.length - 5} more
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="w-full h-full bg-gray-100" />
-              )}
-              {i === 4 && images.length > 5 && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold">
-                  +{images.length - 5} more
-                </div>
+                <div className="w-full h-full bg-gray-100 rounded-sm" />
               )}
             </div>
           ))}
         </div>
+
+        {/* Mobile thumbnail strip */}
+        {images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 md:hidden">
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => { setActiveThumb(i); setLightboxIndex(i); }}
+                className={`relative w-16 h-12 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
+                  activeThumb === i ? "border-black" : "border-transparent"
+                }`}
+              >
+                <Image src={img.url} alt={`Thumb ${i + 1}`} fill className="object-cover" sizes="64px" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Main layout */}
         <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
@@ -240,14 +276,12 @@ export default function VehicleDetailPage() {
                 <p className="font-semibold text-gray-900">
                   Listed by {vehicle.host?.firstName} {vehicle.host?.lastName}
                 </p>
-                <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
-                  {vehicle.host?.isVerified && (
-                    <>
-                      <FaCheckCircle className="text-green-500 text-xs" />
-                      Verified host
-                    </>
-                  )}
-                </p>
+                {vehicle.host?.isVerified && (
+                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                    <FaCheckCircle className="text-green-500 text-xs" />
+                    Verified host
+                  </p>
+                )}
               </div>
             </motion.div>
 
@@ -274,21 +308,35 @@ export default function VehicleDetailPage() {
               </div>
             )}
 
-            {/* Reviews placeholder */}
+            {/* Reviews */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-xl font-semibold">Reviews</h2>
-                {vehicle.totalReviews > 0 && (
-                  <span className="flex items-center gap-1 text-gray-600">
+                {reviews.length > 0 && (
+                  <span className="flex items-center gap-1 text-gray-600 text-sm">
                     <FaStar className="text-yellow-400" />
-                    {vehicle.averageRating.toFixed(1)} · {vehicle.totalReviews} reviews
+                    {Number(vehicle.averageRating).toFixed(1)} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
                   </span>
                 )}
               </div>
-              {vehicle.totalReviews === 0 ? (
-                <p className="text-gray-400">No reviews yet. Be the first!</p>
-              ) : (
-                <p className="text-gray-400 italic">Reviews coming in Phase 7.</p>
+
+              <ReviewList
+                reviews={reviews}
+                onDelete={(rid) => setReviews((prev) => prev.filter((r) => r.id !== rid))}
+              />
+
+              {isAuthenticated && (
+                <div className="mt-8">
+                  <ReviewForm
+                    vehicleId={vehicle.id}
+                    onSuccess={() =>
+                      api
+                        .get(`/reviews/vehicle/${vehicle.id}`)
+                        .then((res) => setReviews(res.data.data.reviews ?? []))
+                        .catch(() => {})
+                    }
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -335,7 +383,6 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
 
-              {/* Optional message */}
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -380,7 +427,6 @@ export default function VehicleDetailPage() {
               </p>
             </motion.div>
 
-            {/* Edit button for host */}
             {isAuthenticated && user?.id === vehicle.hostId && (
               <Link
                 href={`/dashboard/host/vehicles/${vehicle.id}/edit`}
@@ -392,6 +438,15 @@ export default function VehicleDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <GalleryLightbox
+          images={images}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   );
 }

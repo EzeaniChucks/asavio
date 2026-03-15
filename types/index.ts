@@ -17,6 +17,11 @@ export interface User {
   profileImage?: string;
   role: "user" | "host" | "admin";
   isVerified: boolean;
+  bankAccountNumber?: string;
+  bankCode?: string;
+  bankAccountName?: string;
+  bankName?: string;
+  paystackRecipientCode?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,7 +64,8 @@ export interface Review {
   comment: string;
   user: User;
   userId: string;
-  propertyId: string;
+  propertyId?: string;
+  vehicleId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,7 +80,15 @@ export interface Booking {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  platformCommission: number;
+  hostPayout: number;
+  status: "awaiting_payment" | "confirmed" | "cancelled" | "completed";
+  paymentMethod: string;
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  hostPayoutStatus: "pending" | "processing" | "transferred" | "failed";
+  paystackReference?: string;
+  payoutReference?: string;
+  paymentNotes?: string;
   specialRequests?: string;
   createdAt: string;
   updatedAt: string;

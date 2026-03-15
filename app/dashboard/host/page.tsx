@@ -16,6 +16,7 @@ import {
   FaBed,
   FaHome,
   FaEye,
+  FaUniversity,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -98,13 +99,22 @@ export default function HostDashboard() {
               Manage your listings and track performance
             </p>
           </div>
-          <Link
-            href="/dashboard/host/properties/new"
-            className="inline-flex items-center gap-2 btn-primary"
-          >
-            <FaPlus className="text-xs" />
-            Add new listing
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/host/bank-details"
+              className="inline-flex items-center gap-2 btn-secondary"
+            >
+              <FaUniversity className="text-xs" />
+              Bank details
+            </Link>
+            <Link
+              href="/dashboard/host/properties/new"
+              className="inline-flex items-center gap-2 btn-primary"
+            >
+              <FaPlus className="text-xs" />
+              Add new listing
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

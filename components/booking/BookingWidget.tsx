@@ -5,11 +5,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
-import toast from "react-hot-toast";
 
 interface BookingWidgetProps {
   property: Property;
@@ -54,7 +53,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         .then((res) => setAvailability(res.data.data))
         .catch(() => setAvailability(null))
         .finally(() => setIsChecking(false));
-    }, 400); // debounce
+    }, 400);
 
     return () => clearTimeout(timeout);
   }, [checkIn, checkOut, property.id]);
@@ -68,18 +67,20 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
 
     setIsBooking(true);
     try {
-      const res = await api.post("/bookings", {
+      const bookingRes = await api.post("/bookings", {
         propertyId: property.id,
         checkIn,
         checkOut,
         guests,
         specialRequests: specialRequests.trim() || undefined,
       });
-      const bookingId = res.data.data.booking.id;
-      toast.success("Booking created!");
-      router.push(`/bookings/${bookingId}`);
-    } catch (err: any) {
-      // toast is shown by the axios response interceptor
+      const bookingId = bookingRes.data.data.booking.id;
+
+      const payRes = await api.post("/payments/initialize", { bookingId });
+      const { authorization_url } = payRes.data.data;
+      window.location.href = authorization_url;
+    } catch {
+      // axios interceptor shows toast
     } finally {
       setIsBooking(false);
     }
@@ -97,8 +98,18 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
     >
       {/* Price */}
       <div className="flex items-baseline gap-1 mb-5">
-        <span className="text-2xl font-bold">${property.pricePerNight}</span>
+        <span className="text-2xl font-bold">₦{Number(property.pricePerNight).toLocaleString()}</span>
         <span className="text-gray-500">/ night</span>
+      </div>
+
+      {/* Platform-only warning */}
+      <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800">
+        <FaExclamationTriangle className="shrink-0 mt-0.5 text-amber-500" />
+        <p>
+          <strong>Book and pay on Asavio only.</strong> Payments made outside the platform are not
+          protected. Asavio cannot guarantee refunds or dispute resolution for off-platform
+          transactions.
+        </p>
       </div>
 
       {/* Date + Guest inputs */}
@@ -205,7 +216,11 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
           onClick={handleReserve}
           className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isBooking ? "Reserving…" : !checkIn || !checkOut ? "Select dates to reserve" : "Reserve"}
+          {isBooking
+            ? "Redirecting to payment…"
+            : !checkIn || !checkOut
+            ? "Select dates to reserve"
+            : "Reserve & Pay"}
         </button>
       ) : (
         <Link
@@ -221,19 +236,20 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         <div className="mt-5 space-y-2 text-sm border-t border-gray-100 pt-5">
           <div className="flex justify-between text-gray-600">
             <span>
-              ${property.pricePerNight} × {nights} {nights === 1 ? "night" : "nights"}
+              ₦{Number(property.pricePerNight).toLocaleString()} × {nights}{" "}
+              {nights === 1 ? "night" : "nights"}
             </span>
-            <span>${availability.totalPrice.toFixed(2)}</span>
+            <span>₦{availability.totalPrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
             <span>Total</span>
-            <span>${availability.totalPrice.toFixed(2)}</span>
+            <span>₦{availability.totalPrice.toLocaleString()}</span>
           </div>
         </div>
       )}
 
       <p className="text-center text-xs text-gray-400 mt-4">
-        You won&apos;t be charged yet
+        You&apos;ll be redirected to Paystack to complete payment securely.
       </p>
     </motion.div>
   );

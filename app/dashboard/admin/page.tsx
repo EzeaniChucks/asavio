@@ -82,6 +82,14 @@ const NAV_LINKS = [
     color: "bg-red-50",
     iconColor: "text-red-600",
   },
+  {
+    href: "/dashboard/admin/payouts",
+    icon: <FaMoneyBillWave className="text-xl" />,
+    label: "Payouts",
+    desc: "Transfer earnings to hosts after check-in",
+    color: "bg-green-50",
+    iconColor: "text-green-600",
+  },
 ];
 
 const container = {
@@ -146,6 +154,7 @@ export default function AdminDashboard() {
             { href: "/dashboard/admin/vehicles", label: "Vehicles" },
             { href: "/dashboard/admin/bookings", label: "Bookings" },
             { href: "/dashboard/admin/reviews", label: "Reviews" },
+            { href: "/dashboard/admin/payouts", label: "Payouts" },
           ].map((tab) => (
             <Link
               key={tab.href}

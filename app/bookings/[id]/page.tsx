@@ -12,10 +12,10 @@ import {
   FaUsers,
   FaMapMarkerAlt,
   FaCheckCircle,
-  FaClock,
   FaTimesCircle,
   FaTrophy,
   FaPhone,
+  FaCreditCard,
 } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
@@ -23,11 +23,11 @@ import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 
 const STATUS_CONFIG = {
-  pending: {
-    icon: <FaClock className="text-yellow-500" />,
-    label: "Pending confirmation",
-    desc: "Waiting for the host to confirm your booking.",
-    classes: "bg-yellow-50 border-yellow-200 text-yellow-800",
+  awaiting_payment: {
+    icon: <FaCreditCard className="text-orange-500" />,
+    label: "Awaiting payment",
+    desc: "Your booking is reserved — complete payment to confirm.",
+    classes: "bg-orange-50 border-orange-200 text-orange-800",
   },
   confirmed: {
     icon: <FaCheckCircle className="text-green-500" />,
@@ -72,6 +72,7 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -85,6 +86,19 @@ export default function BookingDetailPage() {
       .catch(() => router.push("/bookings"))
       .finally(() => setIsLoading(false));
   }, [id, user, router]);
+
+  const handlePayNow = async () => {
+    if (!booking) return;
+    setIsRedirectingToPayment(true);
+    try {
+      const res = await api.post("/payments/initialize", { bookingId: booking.id });
+      window.location.href = res.data.data.authorization_url;
+    } catch {
+      toast.error("Could not initialize payment. Please try again.");
+    } finally {
+      setIsRedirectingToPayment(false);
+    }
+  };
 
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to cancel this booking?")) return;
@@ -110,10 +124,12 @@ export default function BookingDetailPage() {
 
   if (!booking) return null;
 
-  const statusCfg = STATUS_CONFIG[booking.status];
+  const statusCfg = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.confirmed;
   const nights = nightCount(booking.checkIn, booking.checkOut);
-  const canCancel = booking.status === "pending" || booking.status === "confirmed";
+  const canCancel = booking.status === "confirmed" || booking.status === "awaiting_payment";
+  const canPayNow = booking.status === "awaiting_payment";
   const isGuest = user?.id === booking.userId;
+  const isHostOrAdmin = user?.role === "host" || user?.role === "admin";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -246,12 +262,59 @@ export default function BookingDetailPage() {
           <h2 className="font-semibold text-gray-900 mb-4">Price breakdown</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>${booking.property?.pricePerNight} × {nights} nights</span>
-              <span>${Number(booking.totalPrice).toFixed(2)}</span>
+              <span>₦{Number(booking.property?.pricePerNight).toLocaleString()} × {nights} nights</span>
+              <span>₦{Number(booking.totalPrice).toLocaleString()}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-3">
               <span>Total charged</span>
-              <span>${Number(booking.totalPrice).toFixed(2)}</span>
+              <span>₦{Number(booking.totalPrice).toLocaleString()}</span>
+            </div>
+
+            {/* Host / admin view: commission breakdown */}
+            {isHostOrAdmin && (
+              <>
+                <div className="flex justify-between text-gray-500 border-t border-gray-100 pt-3">
+                  <span>Platform commission</span>
+                  <span>− ₦{Number(booking.platformCommission).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-medium text-gray-800">
+                  <span>Host payout</span>
+                  <span>₦{Number(booking.hostPayout).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Payout status</span>
+                  <span className={`capitalize font-medium ${
+                    booking.hostPayoutStatus === "transferred"
+                      ? "text-green-600"
+                      : booking.hostPayoutStatus === "failed"
+                      ? "text-red-500"
+                      : booking.hostPayoutStatus === "processing"
+                      ? "text-blue-500"
+                      : "text-orange-500"
+                  }`}>
+                    {booking.hostPayoutStatus}
+                  </span>
+                </div>
+                {booking.payoutReference && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Payout ref</span>
+                    <span className="font-mono text-xs">{booking.payoutReference}</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex justify-between text-sm border-t border-gray-100 pt-3">
+              <span className="text-gray-500">Payment status</span>
+              <span className={`font-medium capitalize ${
+                booking.paymentStatus === "paid"
+                  ? "text-green-600"
+                  : booking.paymentStatus === "failed"
+                  ? "text-red-500"
+                  : "text-orange-500"
+              }`}>
+                {booking.paymentStatus}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -274,6 +337,17 @@ export default function BookingDetailPage() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
+          {isGuest && canPayNow && (
+            <button
+              onClick={handlePayNow}
+              disabled={isRedirectingToPayment}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-black text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              <FaCreditCard />
+              {isRedirectingToPayment ? "Redirecting…" : "Pay now"}
+            </button>
+          )}
+
           <Link
             href={`/properties/${booking.property?.id}`}
             className="flex-1 text-center btn-secondary py-3"

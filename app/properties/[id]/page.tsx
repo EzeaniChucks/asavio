@@ -17,6 +17,7 @@ import {
   FaShare,
   FaHeart,
   FaRegHeart,
+  FaExpand,
 } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Property, Review } from "@/types";
@@ -24,6 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import BookingWidget from "@/components/booking/BookingWidget";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
+import GalleryLightbox from "@/components/ui/GalleryLightbox";
 
 const AMENITY_ICONS: Record<string, string> = {
   wifi: "📶",
@@ -58,9 +60,12 @@ export default function PropertyDetailPage() {
 
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
+
+  // Gallery / lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activeThumb, setActiveThumb] = useState(0);
 
   useEffect(() => {
     api
@@ -113,8 +118,8 @@ export default function PropertyDetailPage() {
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <FaStar className="text-yellow-400" />
-                <strong>{property.averageRating.toFixed(1)}</strong>
-                <span>({property.totalReviews} reviews)</span>
+                <strong>{Number(property.averageRating).toFixed(1)}</strong>
+                <span>({property.totalReviews} {property.totalReviews === 1 ? "review" : "reviews"})</span>
               </span>
               <span className="flex items-center gap-1">
                 <FaMapMarkerAlt className="text-gray-400" />
@@ -134,58 +139,77 @@ export default function PropertyDetailPage() {
               onClick={() => setSaved(!saved)}
               className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              {saved ? (
-                <FaHeart className="text-red-500" />
-              ) : (
-                <FaRegHeart />
-              )}
+              {saved ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
               Save
             </button>
           </div>
         </div>
 
         {/* Image gallery */}
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-10 h-[400px] md:h-[500px]">
-          {/* Main image */}
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-4 h-[400px] md:h-[500px]">
+          {/* Main image — spans both rows on mobile (full height), left half on desktop */}
           <div
-            className="col-span-4 md:col-span-2 md:row-span-2 relative cursor-pointer"
-            onClick={() => setActiveImage(0)}
+            className="col-span-4 row-span-2 md:col-span-2 relative cursor-pointer group"
+            onClick={() => setLightboxIndex(0)}
           >
             <Image
-              src={images[0]?.url || "/images/placeholder.jpg"}
+              src={images[activeThumb]?.url || images[0]?.url || "/images/placeholder.jpg"}
               alt={property.title}
               fill
-              className="object-cover hover:opacity-95 transition-opacity"
+              className="object-cover group-hover:opacity-95 transition-opacity"
               priority
             />
+            <div className="absolute inset-0 flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="flex items-center gap-1.5 bg-black/60 text-white text-xs px-2.5 py-1.5 rounded-lg">
+                <FaExpand className="text-xs" /> View all {images.length} photos
+              </span>
+            </div>
           </div>
-          {/* Secondary images */}
+
+          {/* Secondary images — hidden on mobile */}
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className={`relative hidden md:block cursor-pointer ${
-                i === 4 ? "relative" : ""
-              }`}
-              onClick={() => setActiveImage(i)}
+              className={`relative hidden md:block ${images[i] ? "cursor-pointer group" : ""}`}
+              onClick={() => images[i] && setLightboxIndex(i)}
             >
               {images[i] ? (
-                <Image
-                  src={images[i].url}
-                  alt={`${property.title} ${i + 1}`}
-                  fill
-                  className="object-cover hover:opacity-90 transition-opacity"
-                />
+                <>
+                  <Image
+                    src={images[i].url}
+                    alt={`${property.title} ${i + 1}`}
+                    fill
+                    className="object-cover group-hover:opacity-90 transition-opacity"
+                  />
+                  {i === 4 && images.length > 5 && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold">
+                      +{images.length - 5} more
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="w-full h-full bg-gray-100" />
-              )}
-              {i === 4 && images.length > 5 && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold">
-                  +{images.length - 5} more
-                </div>
+                <div className="w-full h-full bg-gray-100 rounded-sm" />
               )}
             </div>
           ))}
         </div>
+
+        {/* Mobile thumbnail strip */}
+        {images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 md:hidden">
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => { setActiveThumb(i); setLightboxIndex(i); }}
+                className={`relative w-16 h-12 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
+                  activeThumb === i ? "border-black" : "border-transparent"
+                }`}
+              >
+                <Image src={img.url} alt={`Thumb ${i + 1}`} fill className="object-cover" sizes="64px" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Main layout: info + booking sidebar */}
         <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
@@ -220,14 +244,12 @@ export default function PropertyDetailPage() {
                 <p className="font-semibold text-gray-900">
                   Hosted by {property.host?.firstName} {property.host?.lastName}
                 </p>
-                <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
-                  {property.host?.isVerified && (
-                    <>
-                      <FaCheckCircle className="text-green-500 text-xs" />
-                      Verified host
-                    </>
-                  )}
-                </p>
+                {property.host?.isVerified && (
+                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                    <FaCheckCircle className="text-green-500 text-xs" />
+                    Verified host
+                  </p>
+                )}
               </div>
             </motion.div>
 
@@ -245,10 +267,7 @@ export default function PropertyDetailPage() {
                 <h2 className="text-xl font-semibold mb-5">What this place offers</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {property.amenities.map((amenity) => (
-                    <div
-                      key={amenity}
-                      className="flex items-center gap-3 text-gray-700"
-                    >
+                    <div key={amenity} className="flex items-center gap-3 text-gray-700">
                       <span className="text-xl">{getAmenityIcon(amenity)}</span>
                       <span className="capitalize">{amenity}</span>
                     </div>
@@ -258,12 +277,11 @@ export default function PropertyDetailPage() {
             )}
 
             {/* Location */}
-            <div className="pb-8 mb-8">
+            <div className="pb-8 border-b border-gray-100 mb-8">
               <h2 className="text-xl font-semibold mb-3">Location</h2>
               <p className="text-gray-600 mb-1">{property.location.address}</p>
               <p className="text-gray-500 text-sm">
-                {property.location.city}, {property.location.state},{" "}
-                {property.location.country}
+                {property.location.city}, {property.location.state}, {property.location.country}
               </p>
             </div>
 
@@ -274,14 +292,14 @@ export default function PropertyDetailPage() {
                 {reviews.length > 0 && (
                   <span className="flex items-center gap-1 text-gray-600 text-sm">
                     <FaStar className="text-yellow-400" />
-                    {property.averageRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+                    {Number(property.averageRating).toFixed(1)} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
                   </span>
                 )}
               </div>
 
               <ReviewList
                 reviews={reviews}
-                onDelete={(id) => setReviews((prev) => prev.filter((r) => r.id !== id))}
+                onDelete={(rid) => setReviews((prev) => prev.filter((r) => r.id !== rid))}
               />
 
               {isAuthenticated && (
@@ -304,7 +322,6 @@ export default function PropertyDetailPage() {
           <div className="lg:sticky lg:top-24 space-y-3">
             <BookingWidget property={property} />
 
-            {/* Edit button for host */}
             {isAuthenticated && user?.id === property.hostId && (
               <Link
                 href={`/dashboard/host/properties/${property.id}/edit`}
@@ -316,6 +333,15 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <GalleryLightbox
+          images={images}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   );
 }
