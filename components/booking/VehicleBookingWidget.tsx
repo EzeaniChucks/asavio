@@ -3,7 +3,7 @@
 // components/booking/VehicleBookingWidget.tsx
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { DateRange } from "react-date-range";
 import type { RangeKeyDict } from "react-date-range";
@@ -60,6 +60,7 @@ function formatDisplay(dateStr: string): string {
 
 export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAuth();
 
   const today = new Date();
@@ -159,7 +160,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
   }, [pickUp, returnDate, withDriver, vehicle.id]);
 
   const handleBook = async () => {
-    if (!isAuthenticated) { router.push("/login"); return; }
+    if (!isAuthenticated) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
     if (!pickUp || !returnDate || !availability?.available) return;
 
     setIsBooking(true);
@@ -331,26 +332,19 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
       )}
 
       {/* Book button */}
-      {isAuthenticated ? (
-        <button
-          disabled={!canBook || isBooking}
-          onClick={handleBook}
-          className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isBooking
+      <button
+        disabled={isAuthenticated ? (!canBook || isBooking) : false}
+        onClick={handleBook}
+        className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {isAuthenticated
+          ? isBooking
             ? "Redirecting to payment…"
             : !pickUp || !returnDate
             ? "Select dates to book"
-            : "Book & Pay"}
-        </button>
-      ) : (
-        <Link
-          href="/login"
-          className="block w-full text-center bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
-        >
-          Log in to book
-        </Link>
-      )}
+            : "Book & Pay"
+          : "Log in to book"}
+      </button>
 
       {/* Price breakdown */}
       {days > 0 && availability?.available && (

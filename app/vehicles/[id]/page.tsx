@@ -56,6 +56,7 @@ export default function VehicleDetailPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
 
   // Gallery / lightbox state
@@ -69,6 +70,18 @@ export default function VehicleDetailPage() {
       .catch(() => router.push("/vehicles"))
       .finally(() => setIsLoading(false));
   }, [id, router]);
+
+  // Load saved state for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
+    api
+      .get("/saved/ids")
+      .then((res) => {
+        const ids: string[] = res.data.data.vehicleIds ?? [];
+        setSaved(ids.includes(id));
+      })
+      .catch(() => {});
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
     if (!id) return;
@@ -141,11 +154,26 @@ export default function VehicleDetailPage() {
               <FaShare className="text-xs" /> Share
             </button>
             <button
-              onClick={() => setSaved(!saved)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={async () => {
+                if (!isAuthenticated) {
+                  router.push(`/login?redirect=${encodeURIComponent(`/vehicles/${id}`)}`);
+                  return;
+                }
+                setSaveLoading(true);
+                try {
+                  const res = await api.post("/saved/toggle", { vehicleId: id });
+                  setSaved(res.data.data.saved);
+                } catch {
+                  // interceptor handles toast
+                } finally {
+                  setSaveLoading(false);
+                }
+              }}
+              disabled={saveLoading}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
             >
               {saved ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-              Save
+              {saved ? "Saved" : "Save"}
             </button>
           </div>
         </div>
@@ -298,19 +326,18 @@ export default function VehicleDetailPage() {
                 onDelete={(rid) => setReviews((prev) => prev.filter((r) => r.id !== rid))}
               />
 
-              {isAuthenticated && (
-                <div className="mt-8">
-                  <ReviewForm
-                    vehicleId={vehicle.id}
-                    onSuccess={() =>
-                      api
-                        .get(`/reviews/vehicle/${vehicle.id}`)
-                        .then((res) => setReviews(res.data.data.reviews ?? []))
-                        .catch(() => {})
-                    }
-                  />
-                </div>
-              )}
+              <div className="mt-8">
+                <ReviewForm
+                  vehicleId={vehicle.id}
+                  redirectTo={`/vehicles/${vehicle.id}`}
+                  onSuccess={() =>
+                    api
+                      .get(`/reviews/vehicle/${vehicle.id}`)
+                      .then((res) => setReviews(res.data.data.reviews ?? []))
+                      .catch(() => {})
+                  }
+                />
+              </div>
             </div>
           </div>
 

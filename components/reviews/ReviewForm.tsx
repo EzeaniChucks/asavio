@@ -2,17 +2,22 @@
 
 // components/reviews/ReviewForm.tsx
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { FaStar } from "react-icons/fa";
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 
 interface ReviewFormProps {
   propertyId?: string;
   vehicleId?: string;
   onSuccess: () => void;
+  redirectTo?: string;
 }
 
-export default function ReviewForm({ propertyId, vehicleId, onSuccess }: ReviewFormProps) {
+export default function ReviewForm({ propertyId, vehicleId, onSuccess, redirectTo }: ReviewFormProps) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
@@ -20,6 +25,10 @@ export default function ReviewForm({ propertyId, vehicleId, onSuccess }: ReviewF
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent(redirectTo ?? window.location.pathname)}`);
+      return;
+    }
     if (rating === 0) { toast.error("Please select a rating"); return; }
     if (comment.trim().length < 10) { toast.error("Comment must be at least 10 characters"); return; }
 
@@ -78,7 +87,7 @@ export default function ReviewForm({ propertyId, vehicleId, onSuccess }: ReviewF
           disabled={isSubmitting}
           className="btn-primary py-2 px-6 text-sm disabled:opacity-50"
         >
-          {isSubmitting ? "Submitting…" : "Submit review"}
+          {isSubmitting ? "Submitting…" : isAuthenticated ? "Submit review" : "Log in to review"}
         </button>
       </div>
     </form>

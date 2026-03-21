@@ -3,7 +3,7 @@
 // components/booking/BookingWidget.tsx
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { DateRange } from "react-date-range";
 import type { RangeKeyDict } from "react-date-range";
@@ -44,6 +44,7 @@ function formatDisplay(dateStr: string): string {
 
 export default function BookingWidget({ property }: BookingWidgetProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAuth();
 
   const today = new Date();
@@ -150,7 +151,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
   }, [checkIn, checkOut, purpose, property.id]);
 
   const handleReserve = async () => {
-    if (!isAuthenticated) { router.push("/login"); return; }
+    if (!isAuthenticated) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
     if (!checkIn || !checkOut || !availability?.available) return;
 
     setIsBooking(true);
@@ -334,26 +335,19 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
       )}
 
       {/* Reserve / Login button */}
-      {isAuthenticated ? (
-        <button
-          disabled={!canReserve || isBooking}
-          onClick={handleReserve}
-          className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isBooking
+      <button
+        disabled={isAuthenticated ? (!canReserve || isBooking) : false}
+        onClick={handleReserve}
+        className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {isAuthenticated
+          ? isBooking
             ? "Redirecting to payment…"
             : !checkIn || !checkOut
             ? "Select dates to reserve"
-            : "Reserve & Pay"}
-        </button>
-      ) : (
-        <Link
-          href="/login"
-          className="block w-full text-center bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
-        >
-          Log in to reserve
-        </Link>
-      )}
+            : "Reserve & Pay"
+          : "Log in to reserve"}
+      </button>
 
       {/* Price breakdown */}
       {nights > 0 && availability?.available && (

@@ -1,15 +1,19 @@
 "use client";
 
 // app/(auth)/login/page.tsx
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaEye, FaEyeSlash, FaEnvelope, FaLock } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || undefined;
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +30,7 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      await login(formData);
+      await login(formData, redirect);
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +78,7 @@ export default function LoginPage() {
           <p className="text-gray-500 mb-8">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href={redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : "/register"}
               className="text-black font-semibold hover:text-secondary transition-colors"
             >
               Create one
@@ -148,5 +152,13 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

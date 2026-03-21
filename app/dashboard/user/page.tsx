@@ -15,11 +15,19 @@ import {
   FaTimesCircle,
   FaArrowRight,
   FaEdit,
+  FaHeart,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
-import { Booking } from "@/types";
+import { Booking, Property } from "@/types";
 import toast from "react-hot-toast";
+
+interface SavedItem {
+  id: string;
+  propertyId: string | null;
+  property?: Property;
+  createdAt: string;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   awaiting_payment: "bg-orange-100 text-orange-800",
@@ -47,6 +55,7 @@ export default function UserDashboard() {
   const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Profile edit state
@@ -66,11 +75,10 @@ export default function UserDashboard() {
     setLastName(user.lastName);
     setPhone(user.phone ?? "");
 
-    api
-      .get("/bookings/my")
-      .then((res) => setBookings(res.data.data.bookings))
-      .catch(() => setBookings([]))
-      .finally(() => setIsLoading(false));
+    Promise.all([
+      api.get("/bookings/my").then((res) => setBookings(res.data.data.bookings)).catch(() => setBookings([])),
+      api.get("/saved").then((res) => setSavedItems(res.data.data.items ?? [])).catch(() => setSavedItems([])),
+    ]).finally(() => setIsLoading(false));
   }, [user]);
 
   const handleSaveProfile = async () => {
@@ -199,6 +207,57 @@ export default function UserDashboard() {
                           {STATUS_LABELS[booking.status] ?? booking.status}
                         </span>
                       </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Saved properties */}
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-gray-50">
+                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <FaHeart className="text-red-400 text-sm" /> Saved properties
+                </h2>
+                <Link href="/properties" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
+                  Browse <FaArrowRight className="text-xs" />
+                </Link>
+              </div>
+
+              {savedItems.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-400 mb-4">No saved properties yet</p>
+                  <Link href="/properties" className="btn-primary text-sm">
+                    Browse properties
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {savedItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/properties/${item.propertyId}`}
+                      className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                        {item.property?.images?.[0]?.url ? (
+                          <Image
+                            src={item.property.images[0].url}
+                            alt={item.property.title ?? ""}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl">🏠</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{item.property?.title ?? "Property"}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.property?.city}, {item.property?.state}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                        ₦{item.property?.pricePerNight?.toLocaleString()}<span className="text-xs font-normal text-gray-400">/night</span>
+                      </p>
                     </Link>
                   ))}
                 </div>

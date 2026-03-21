@@ -63,6 +63,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
 
   // Gallery / lightbox state
@@ -76,6 +77,18 @@ export default function PropertyDetailPage() {
       .catch(() => router.push("/properties"))
       .finally(() => setIsLoading(false));
   }, [id, router]);
+
+  // Load saved state for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
+    api
+      .get("/saved/ids")
+      .then((res) => {
+        const ids: string[] = res.data.data.propertyIds ?? [];
+        setSaved(ids.includes(id));
+      })
+      .catch(() => {});
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
     if (!id) return;
@@ -138,11 +151,26 @@ export default function PropertyDetailPage() {
               <FaShare className="text-xs" /> Share
             </button>
             <button
-              onClick={() => setSaved(!saved)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={async () => {
+                if (!isAuthenticated) {
+                  router.push(`/login?redirect=${encodeURIComponent(`/properties/${id}`)}`);
+                  return;
+                }
+                setSaveLoading(true);
+                try {
+                  const res = await api.post("/saved/toggle", { propertyId: id });
+                  setSaved(res.data.data.saved);
+                } catch {
+                  // interceptor handles toast
+                } finally {
+                  setSaveLoading(false);
+                }
+              }}
+              disabled={saveLoading}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
             >
               {saved ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-              Save
+              {saved ? "Saved" : "Save"}
             </button>
           </div>
         </div>
@@ -265,9 +293,14 @@ export default function PropertyDetailPage() {
                   )}
                 </div>
               </div>
-              {isAuthenticated && user && user.id !== property.hostId && (
+              {(!user || user.id !== property.hostId) && (
                 <button
                   onClick={async () => {
+                    if (!isAuthenticated) {
+                      const returnUrl = `/dashboard/messages?hostId=${property.hostId}&propertyId=${property.id}`;
+                      router.push(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+                      return;
+                    }
                     try {
                       const res = await api.post("/conversations", {
                         hostId: property.hostId,
@@ -336,19 +369,18 @@ export default function PropertyDetailPage() {
                 onDelete={(rid) => setReviews((prev) => prev.filter((r) => r.id !== rid))}
               />
 
-              {isAuthenticated && (
-                <div className="mt-8">
-                  <ReviewForm
-                    propertyId={property.id}
-                    onSuccess={() =>
-                      api
-                        .get(`/reviews/property/${property.id}`)
-                        .then((res) => setReviews(res.data.data.reviews ?? res.data.data ?? []))
-                        .catch(() => {})
-                    }
-                  />
-                </div>
-              )}
+              <div className="mt-8">
+                <ReviewForm
+                  propertyId={property.id}
+                  redirectTo={`/properties/${property.id}`}
+                  onSuccess={() =>
+                    api
+                      .get(`/reviews/property/${property.id}`)
+                      .then((res) => setReviews(res.data.data.reviews ?? res.data.data ?? []))
+                      .catch(() => {})
+                  }
+                />
+              </div>
             </div>
           </div>
 

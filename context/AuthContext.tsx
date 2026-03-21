@@ -17,8 +17,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials, redirectTo?: string) => Promise<void>;
+  register: (credentials: RegisterCredentials, redirectTo?: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -50,22 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser().finally(() => setIsLoading(false));
   }, [refreshUser]);
 
-  const login = async (credentials: LoginCredentials) => {
+  const defaultDashboard = (role: string) => {
+    if (role === "admin") return "/dashboard/admin";
+    if (role === "host") return "/dashboard/host";
+    return "/dashboard/user";
+  };
+
+  const login = async (credentials: LoginCredentials, redirectTo?: string) => {
     const res = await api.post("/auth/login", credentials);
     const { token, data } = res.data;
     localStorage.setItem("token", token);
     setUser(data.user);
     toast.success(`Welcome back, ${data.user.firstName}!`);
-    router.push("/");
+    router.push(redirectTo || defaultDashboard(data.user.role));
   };
 
-  const register = async (credentials: RegisterCredentials) => {
+  const register = async (credentials: RegisterCredentials, redirectTo?: string) => {
     const res = await api.post("/auth/register", credentials);
     const { token, data } = res.data;
     localStorage.setItem("token", token);
     setUser(data.user);
     toast.success(`Welcome to Asavio, ${data.user.firstName}!`);
-    router.push("/");
+    router.push(redirectTo || defaultDashboard(data.user.role));
   };
 
   const logout = () => {

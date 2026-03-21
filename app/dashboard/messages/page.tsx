@@ -24,6 +24,8 @@ function MessagesContent() {
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
   const initConvId = searchParams.get("conv");
+  const initHostId = searchParams.get("hostId");
+  const initPropertyId = searchParams.get("propertyId");
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(initConvId);
@@ -34,7 +36,7 @@ function MessagesContent() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mobileShowThread, setMobileShowThread] = useState(!!initConvId);
+  const [mobileShowThread, setMobileShowThread] = useState(!!initConvId || !!initHostId);
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const otherUser =
@@ -44,13 +46,30 @@ function MessagesContent() {
         : activeConv.guest
       : null;
 
-  // ── Fetch conversations ──────────────────────────────────────────────────────
+  // ── Fetch conversations (and auto-create if redirected from property page) ───
   useEffect(() => {
     if (!isAuthenticated) return;
-    api.get("/conversations").then((res) => {
+    api.get("/conversations").then(async (res) => {
       setConversations(res.data.data.conversations);
+      // If redirected here post-login with hostId+propertyId, create/fetch conv
+      if (initHostId && initPropertyId && !initConvId) {
+        try {
+          const convRes = await api.post("/conversations", {
+            hostId: initHostId,
+            propertyId: initPropertyId,
+          });
+          const convId = convRes.data.data.conversation.id;
+          setActiveConvId(convId);
+          setMobileShowThread(true);
+          // Refresh conversation list to include the new one
+          const listRes = await api.get("/conversations");
+          setConversations(listRes.data.data.conversations);
+        } catch {
+          // handled by interceptor
+        }
+      }
     });
-  }, [isAuthenticated]);
+  }, [isAuthenticated, initHostId, initPropertyId, initConvId]);
 
   // ── Socket setup ─────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 // app/(auth)/register/page.tsx
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -12,12 +12,16 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
 type Role = "user" | "host";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const { register } = useAuth();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || undefined;
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -47,7 +51,7 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
     try {
-      await register(formData);
+      await register(formData, redirect);
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +100,7 @@ export default function RegisterPage() {
           <p className="text-gray-500 mb-8">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
               className="text-black font-semibold hover:text-secondary transition-colors"
             >
               Sign in
@@ -234,5 +238,13 @@ export default function RegisterPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
   );
 }
