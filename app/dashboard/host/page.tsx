@@ -17,6 +17,12 @@ import {
   FaHome,
   FaEye,
   FaUniversity,
+  FaMoneyBillWave,
+  FaIdCard,
+  FaCheckCircle,
+  FaClock,
+  FaExclamationTriangle,
+  FaCalendarTimes,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -29,6 +35,7 @@ export default function HostDashboard() {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [kycStatus, setKycStatus] = useState<"not_submitted" | "pending" | "approved" | "rejected" | null>(null);
 
   // Auth guard
   useEffect(() => {
@@ -44,6 +51,11 @@ export default function HostDashboard() {
       .then((res) => setProperties(res.data.data.properties))
       .catch(() => setProperties([]))
       .finally(() => setIsLoading(false));
+
+    api
+      .get("/kyc/status")
+      .then((res) => setKycStatus(res.data.data.kycStatus))
+      .catch(() => {});
   }, [user]);
 
   const toggleAvailability = async (property: Property) => {
@@ -99,7 +111,44 @@ export default function HostDashboard() {
               Manage your listings and track performance
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/dashboard/host/kyc"
+              className={`inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+                kycStatus === "approved"
+                  ? "bg-green-50 text-green-700 hover:bg-green-100"
+                  : kycStatus === "pending"
+                  ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                  : "bg-red-50 text-red-700 hover:bg-red-100 font-semibold"
+              }`}
+            >
+              {kycStatus === "approved" ? (
+                <FaCheckCircle className="text-xs" />
+              ) : kycStatus === "pending" ? (
+                <FaClock className="text-xs" />
+              ) : (
+                <FaExclamationTriangle className="text-xs" />
+              )}
+              {kycStatus === "approved"
+                ? "Verified"
+                : kycStatus === "pending"
+                ? "KYC pending"
+                : "Verify identity"}
+            </Link>
+            <Link
+              href="/dashboard/host/availability"
+              className="inline-flex items-center gap-2 btn-secondary"
+            >
+              <FaCalendarTimes className="text-xs" />
+              Availability
+            </Link>
+            <Link
+              href="/dashboard/host/earnings"
+              className="inline-flex items-center gap-2 btn-secondary"
+            >
+              <FaMoneyBillWave className="text-xs" />
+              Earnings
+            </Link>
             <Link
               href="/dashboard/host/bank-details"
               className="inline-flex items-center gap-2 btn-secondary"
@@ -116,6 +165,51 @@ export default function HostDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* KYC warning banner */}
+        {kycStatus && kycStatus !== "approved" && (
+          <div className={`rounded-xl border p-4 mb-6 flex items-start gap-3 ${
+            kycStatus === "pending"
+              ? "bg-amber-50 border-amber-200"
+              : kycStatus === "rejected"
+              ? "bg-red-50 border-red-200"
+              : "bg-orange-50 border-orange-200"
+          }`}>
+            <FaIdCard className={`text-lg mt-0.5 flex-shrink-0 ${
+              kycStatus === "pending" ? "text-amber-500" : "text-red-500"
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm ${
+                kycStatus === "pending" ? "text-amber-800" : "text-red-800"
+              }`}>
+                {kycStatus === "pending"
+                  ? "Identity verification in progress"
+                  : kycStatus === "rejected"
+                  ? "Identity verification failed — action required"
+                  : "Identity verification required"}
+              </p>
+              <p className={`text-xs mt-0.5 ${
+                kycStatus === "pending" ? "text-amber-700" : "text-red-700"
+              }`}>
+                {kycStatus === "pending"
+                  ? "Your documents are being reviewed. Your listings will go live once approved."
+                  : kycStatus === "rejected"
+                  ? "Your documents were not approved. Please re-submit to make your listings visible."
+                  : "Submit your government ID to make your listings discoverable to guests."}
+              </p>
+            </div>
+            <Link
+              href="/dashboard/host/kyc"
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors ${
+                kycStatus === "pending"
+                  ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                  : "bg-red-100 text-red-800 hover:bg-red-200"
+              }`}
+            >
+              {kycStatus === "pending" ? "View status" : "Submit now"}
+            </Link>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -199,7 +293,7 @@ export default function HostDashboard() {
                         )}
                         <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
                           <span className="font-semibold text-gray-900">
-                            ${property.pricePerNight}/night
+                            ₦{Number(property.pricePerNight).toLocaleString("en-NG")}/night
                           </span>
                           <span>·</span>
                           <span className="flex items-center gap-1">

@@ -1,6 +1,6 @@
 "use client";
 
-// components/booking/BookingWidget.tsx
+// components/booking/VehicleBookingWidget.tsx
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,19 +9,35 @@ import { DateRange } from "react-date-range";
 import type { RangeKeyDict } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaCalendarAlt } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaCalendarAlt,
+  FaUserTie,
+} from "react-icons/fa";
 import { api } from "@/lib/api";
-import { Property } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 
-interface BookingWidgetProps {
-  property: Property;
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  pricePerDay: number;
+  priceWithDriverPerDay?: number | null;
+  seats: number;
+}
+
+interface VehicleBookingWidgetProps {
+  vehicle: Vehicle;
 }
 
 interface AvailabilityResult {
   available: boolean;
-  nights: number;
-  pricePerNight: number;
+  days: number;
+  pricePerDay: number;
+  priceWithDriverPerDay: number | null;
   totalPrice: number;
 }
 
@@ -42,17 +58,16 @@ function formatDisplay(dateStr: string): string {
   });
 }
 
-export default function BookingWidget({ property }: BookingWidgetProps) {
+export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [purpose, setPurpose] = useState("");
+  const [pickUp, setPickUp] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [withDriver, setWithDriver] = useState(false);
   const [specialRequests, setSpecialRequests] = useState("");
   const [showRequests, setShowRequests] = useState(false);
 
@@ -65,25 +80,22 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
   });
   const calendarRef = useRef<HTMLDivElement>(null);
 
-  // Booked / blocked ranges fetched from API
   const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
-
-  // Availability check result
   const [availability, setAvailability] = useState<AvailabilityResult | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
 
-  const hasPurposePricing = !!(property.purposePricing && Object.keys(property.purposePricing).length > 0);
+  const hasDriverOption = vehicle.priceWithDriverPerDay != null;
 
-  // Fetch booked + blocked date ranges once on mount
+  // Fetch booked date ranges once on mount
   useEffect(() => {
     api
-      .get(`/properties/${property.id}/booked-dates`)
+      .get(`/vehicles/${vehicle.id}/booked-dates`)
       .then((res) => setBookedRanges(res.data.data.bookedDates))
       .catch(() => {});
-  }, [property.id]);
+  }, [vehicle.id]);
 
-  // Close calendar when clicking outside
+  // Close calendar on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
@@ -94,7 +106,6 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
     return () => document.removeEventListener("mousedown", handler);
   }, [calendarOpen]);
 
-  // Returns true if a date falls within any booked/blocked range
   const isDateBlocked = (date: Date): boolean => {
     const d = date.getTime();
     return bookedRanges.some((range) => {
@@ -104,7 +115,6 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
     });
   };
 
-  // Handle calendar selection
   const handleRangeChange = (ranges: RangeKeyDict) => {
     const sel = ranges.selection;
     setSelection({
@@ -116,51 +126,50 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
     const start = sel.startDate ? toYMD(sel.startDate) : "";
     const end = sel.endDate ? toYMD(sel.endDate) : "";
 
-    // Only commit when both dates are different (range selected)
     if (start && end && start !== end) {
-      setCheckIn(start);
-      setCheckOut(end);
+      setPickUp(start);
+      setReturnDate(end);
       setCalendarOpen(false);
     } else if (start) {
-      // First click — keep open
-      setCheckIn(start);
-      setCheckOut("");
+      setPickUp(start);
+      setReturnDate("");
     }
   };
 
-  // Check availability whenever dates change
+  // Check availability whenever dates or driver option changes
   useEffect(() => {
-    if (!checkIn || !checkOut) {
+    if (!pickUp || !returnDate) {
       setAvailability(null);
       return;
     }
-    if (new Date(checkOut) <= new Date(checkIn)) return;
+    if (new Date(returnDate) <= new Date(pickUp)) return;
 
     setIsChecking(true);
     const timeout = setTimeout(() => {
-      const purposeParam = purpose ? `&purpose=${encodeURIComponent(purpose)}` : "";
       api
-        .get(`/bookings/availability?propertyId=${property.id}&checkIn=${checkIn}&checkOut=${checkOut}${purposeParam}`)
+        .get(
+          `/bookings/availability/vehicle?vehicleId=${vehicle.id}&checkIn=${pickUp}&checkOut=${returnDate}&withDriver=${withDriver}`
+        )
         .then((res) => setAvailability(res.data.data))
         .catch(() => setAvailability(null))
         .finally(() => setIsChecking(false));
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [checkIn, checkOut, purpose, property.id]);
+  }, [pickUp, returnDate, withDriver, vehicle.id]);
 
-  const handleReserve = async () => {
+  const handleBook = async () => {
     if (!isAuthenticated) { router.push("/login"); return; }
-    if (!checkIn || !checkOut || !availability?.available) return;
+    if (!pickUp || !returnDate || !availability?.available) return;
 
     setIsBooking(true);
     try {
       const bookingRes = await api.post("/bookings", {
-        propertyId: property.id,
-        checkIn,
-        checkOut,
-        guests,
-        purpose: purpose || undefined,
+        vehicleId: vehicle.id,
+        checkIn: pickUp,
+        checkOut: returnDate,
+        guests: 1,
+        withDriver,
         specialRequests: specialRequests.trim() || undefined,
       });
       const bookingId = bookingRes.data.data.booking.id;
@@ -173,8 +182,11 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
     }
   };
 
-  const nights = availability?.nights ?? 0;
-  const canReserve = checkIn && checkOut && availability?.available && nights > 0;
+  const days = availability?.days ?? 0;
+  const activeRate = withDriver && availability?.priceWithDriverPerDay
+    ? availability.priceWithDriverPerDay
+    : availability?.pricePerDay ?? Number(vehicle.pricePerDay);
+  const canBook = pickUp && returnDate && availability?.available && days > 0;
 
   return (
     <motion.div
@@ -184,27 +196,21 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
       className="border border-gray-200 rounded-2xl p-6 shadow-lg bg-white"
     >
       {/* Price */}
-      <div className="flex items-baseline gap-1 mb-5">
-        {hasPurposePricing && purpose && property.purposePricing?.[purpose] ? (
-          <>
-            <span className="text-2xl font-bold">₦{Number(property.purposePricing[purpose]).toLocaleString()}</span>
-            <span className="text-gray-500">/ night</span>
-            <span className="ml-2 text-xs text-gray-400 line-through">₦{Number(property.pricePerNight).toLocaleString()}</span>
-          </>
-        ) : (
-          <>
-            <span className="text-2xl font-bold">₦{Number(property.pricePerNight).toLocaleString()}</span>
-            <span className="text-gray-500">/ night</span>
-          </>
-        )}
+      <div className="flex items-baseline gap-1 mb-1">
+        <span className="text-2xl font-bold">₦{Number(vehicle.pricePerDay).toLocaleString()}</span>
+        <span className="text-gray-500">/ day</span>
       </div>
+      {hasDriverOption && (
+        <p className="text-xs text-gray-400 mb-4">
+          With driver: ₦{Number(vehicle.priceWithDriverPerDay).toLocaleString()} / day
+        </p>
+      )}
 
       {/* Platform-only warning */}
       <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800">
         <FaExclamationTriangle className="shrink-0 mt-0.5 text-amber-500" />
         <p>
-          <strong>Book and pay on Asavio only.</strong> Payments made outside the platform are not
-          protected.
+          <strong>Book and pay on Asavio only.</strong> Payments outside the platform are not protected.
         </p>
       </div>
 
@@ -217,27 +223,24 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         >
           <div className="grid grid-cols-2">
             <div className="p-3 border-r border-gray-200">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Check-in</p>
-              <p className={`text-sm ${checkIn ? "text-gray-900" : "text-gray-400"}`}>
-                {checkIn ? formatDisplay(checkIn) : "Add date"}
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Pick-up</p>
+              <p className={`text-sm ${pickUp ? "text-gray-900" : "text-gray-400"}`}>
+                {pickUp ? formatDisplay(pickUp) : "Add date"}
               </p>
             </div>
             <div className="p-3">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Check-out</p>
-              <p className={`text-sm ${checkOut ? "text-gray-900" : "text-gray-400"}`}>
-                {checkOut ? formatDisplay(checkOut) : "Add date"}
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Return</p>
+              <p className={`text-sm ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                {returnDate ? formatDisplay(returnDate) : "Add date"}
               </p>
             </div>
           </div>
           <div className="border-t border-gray-100 px-3 py-2 flex items-center gap-1.5 text-xs text-gray-400">
             <FaCalendarAlt className="text-xs" />
-            {checkIn && checkOut
-              ? "Click to change dates"
-              : "Click to select dates — booked dates are greyed out"}
+            {pickUp && returnDate ? "Click to change dates" : "Click to select dates"}
           </div>
         </button>
 
-        {/* Calendar popup */}
         {calendarOpen && (
           <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-2 shadow-2xl rounded-2xl overflow-hidden border border-gray-200 bg-white">
             <DateRange
@@ -254,46 +257,40 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         )}
       </div>
 
-      {/* Guests */}
-      <div className="border border-gray-200 rounded-xl p-3 mb-3">
-        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-          Guests
-        </label>
-        <select
-          value={guests}
-          onChange={(e) => setGuests(Number(e.target.value))}
-          className="w-full text-sm outline-none text-gray-800 bg-transparent cursor-pointer"
-        >
-          {Array.from({ length: property.maxGuests }, (_, i) => i + 1).map((n) => (
-            <option key={n} value={n}>
-              {n} {n === 1 ? "guest" : "guests"}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {hasPurposePricing && (
+      {/* Driver toggle */}
+      {hasDriverOption && (
         <div className="border border-gray-200 rounded-xl p-3 mb-3">
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-            Purpose
-          </label>
-          <select
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            className="w-full text-sm outline-none text-gray-800 bg-transparent cursor-pointer"
+          <button
+            type="button"
+            onClick={() => setWithDriver((w) => !w)}
+            className="flex items-center justify-between w-full"
           >
-            <option value="">Regular stay (base price)</option>
-            {Object.entries(property.purposePricing!).map(([p, price]) => (
-              <option key={p} value={p}>
-                {p} — ₦{Number(price).toLocaleString()}/night
-              </option>
-            ))}
-          </select>
+            <div className="flex items-center gap-2">
+              <FaUserTie className="text-gray-500 text-sm" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-gray-800">Add a driver</p>
+                <p className="text-xs text-gray-400">
+                  +₦{(Number(vehicle.priceWithDriverPerDay) - Number(vehicle.pricePerDay)).toLocaleString()} / day
+                </p>
+              </div>
+            </div>
+            <div
+              className={`w-11 h-6 rounded-full transition-colors relative ${
+                withDriver ? "bg-black" : "bg-gray-200"
+              }`}
+            >
+              <div
+                className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                  withDriver ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </div>
+          </button>
         </div>
       )}
 
       {/* Availability indicator */}
-      {checkIn && checkOut && (
+      {pickUp && returnDate && (
         <div className="mb-3">
           {isChecking ? (
             <p className="text-xs text-gray-400 flex items-center gap-1.5">
@@ -311,7 +308,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
       )}
 
       {/* Special requests */}
-      {checkIn && checkOut && availability?.available && (
+      {pickUp && returnDate && availability?.available && (
         <div className="mb-3">
           <button
             type="button"
@@ -324,7 +321,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
             <textarea
               value={specialRequests}
               onChange={(e) => setSpecialRequests(e.target.value)}
-              placeholder="Any special requests for the host…"
+              placeholder="e.g. Please have the car cleaned before pick-up…"
               maxLength={500}
               rows={3}
               className="mt-2 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-black resize-none"
@@ -333,41 +330,41 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         </div>
       )}
 
-      {/* Reserve / Login button */}
+      {/* Book button */}
       {isAuthenticated ? (
         <button
-          disabled={!canReserve || isBooking}
-          onClick={handleReserve}
+          disabled={!canBook || isBooking}
+          onClick={handleBook}
           className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isBooking
             ? "Redirecting to payment…"
-            : !checkIn || !checkOut
-            ? "Select dates to reserve"
-            : "Reserve & Pay"}
+            : !pickUp || !returnDate
+            ? "Select dates to book"
+            : "Book & Pay"}
         </button>
       ) : (
         <Link
           href="/login"
           className="block w-full text-center bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
         >
-          Log in to reserve
+          Log in to book
         </Link>
       )}
 
       {/* Price breakdown */}
-      {nights > 0 && availability?.available && (
+      {days > 0 && availability?.available && (
         <div className="mt-5 space-y-2 text-sm border-t border-gray-100 pt-5">
-          {purpose && (
+          {withDriver && hasDriverOption && (
             <div className="flex justify-between text-gray-500 text-xs">
-              <span>Purpose</span>
-              <span className="font-medium text-gray-700">{purpose}</span>
+              <span>Rate</span>
+              <span className="font-medium text-gray-700">With driver</span>
             </div>
           )}
           <div className="flex justify-between text-gray-600">
             <span>
-              ₦{Number(availability.pricePerNight).toLocaleString()} × {nights}{" "}
-              {nights === 1 ? "night" : "nights"}
+              ₦{Number(activeRate).toLocaleString()} × {days}{" "}
+              {days === 1 ? "day" : "days"}
             </span>
             <span>₦{availability.totalPrice.toLocaleString()}</span>
           </div>

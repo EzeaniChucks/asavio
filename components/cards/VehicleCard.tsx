@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaStar, FaUsers } from "react-icons/fa";
 import { Vehicle } from "@/types";
+import { formatPrice } from "@/lib/formatPrice";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -55,9 +56,9 @@ export default function VehicleCard({ vehicle, index = 0 }: VehicleCardProps) {
             <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-full">
               {TYPE_LABELS[vehicle.vehicleType] ?? vehicle.vehicleType}
             </span>
-            {vehicle.withDriver && (
+            {vehicle.priceWithDriverPerDay && (
               <span className="bg-black/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-                With driver
+                Driver available
               </span>
             )}
           </div>
@@ -95,10 +96,25 @@ export default function VehicleCard({ vehicle, index = 0 }: VehicleCardProps) {
           </div>
 
           {/* Price row */}
-          <div className="flex items-baseline justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <div>
-              <span className="font-bold text-gray-900 text-base">${vehicle.pricePerDay}</span>
-              <span className="text-gray-400 text-xs ml-1">/ day</span>
+              {vehicle.priceWithDriverPerDay ? (
+                <div className="space-y-0.5">
+                  <div>
+                    <span className="font-bold text-gray-900 text-base">{formatPrice(vehicle.pricePerDay)}</span>
+                    <span className="text-gray-400 text-xs ml-1">self-drive</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">{formatPrice(vehicle.priceWithDriverPerDay!)}</span>
+                    <span className="text-gray-400 text-xs ml-1">with driver</span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <span className="font-bold text-gray-900 text-base">{formatPrice(vehicle.pricePerDay)}</span>
+                  <span className="text-gray-400 text-xs ml-1">/ day</span>
+                </div>
+              )}
             </div>
             {vehicle.totalReviews > 0 && (
               <span className="text-xs text-gray-400">

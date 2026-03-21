@@ -45,7 +45,7 @@ export default function GalleryLightbox({ images, startIndex = 0, onClose }: Gal
       {/* Close */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+        className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
         aria-label="Close gallery"
       >
         <FaTimes size={18} />
@@ -60,7 +60,7 @@ export default function GalleryLightbox({ images, startIndex = 0, onClose }: Gal
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); prev(); }}
-          className="absolute left-3 sm:left-6 z-10 p-3 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+          className="absolute left-3 sm:left-6 z-20 p-3 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
           aria-label="Previous photo"
         >
           <FaChevronLeft size={18} />
@@ -93,7 +93,7 @@ export default function GalleryLightbox({ images, startIndex = 0, onClose }: Gal
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); next(); }}
-          className="absolute right-3 sm:right-6 z-10 p-3 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+          className="absolute right-3 sm:right-6 z-20 p-3 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
           aria-label="Next photo"
         >
           <FaChevronRight size={18} />

@@ -5,8 +5,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaBars, FaTimes, FaUser, FaChevronDown } from "react-icons/fa";
+import { FaBars, FaTimes, FaUser, FaChevronDown, FaComments } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 const navLinks = [
   { href: "/properties", label: "Properties" },
@@ -68,6 +69,21 @@ export default function Navbar() {
 
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated && user ? (
+              <>
+                {/* Messages icon */}
+                <Link
+                  href="/dashboard/messages"
+                  className={`p-2 rounded-full hover:bg-black/10 transition-colors ${textColor}`}
+                  aria-label="Messages"
+                >
+                  <FaComments size={18} />
+                </Link>
+
+                {/* Notification bell */}
+                <NotificationBell textColor={textColor} />
+              </>
+            ) : null}
             {isAuthenticated && user ? (
               <div className="relative">
                 <button
@@ -190,6 +206,15 @@ export default function Navbar() {
                       {user.firstName} {user.lastName}
                     </span>
                   </div>
+                  {user.role === "admin" && (
+                    <Link
+                      href="/dashboard/admin"
+                      className="text-gray-700 py-2"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
                   {user.role === "host" && (
                     <Link
                       href="/dashboard/host"
@@ -205,6 +230,13 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                   >
                     My Bookings
+                  </Link>
+                  <Link
+                    href="/dashboard/messages"
+                    className="text-gray-700 py-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Messages
                   </Link>
                   <button
                     onClick={() => {

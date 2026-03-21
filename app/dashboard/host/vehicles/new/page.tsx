@@ -27,9 +27,10 @@ export default function NewVehiclePage() {
     year: new Date().getFullYear(),
     vehicleType: "sedan",
     pricePerDay: "",
+    priceWithDriverPerDay: "",
     description: "",
     seats: 5,
-    withDriver: false,
+    driverAvailable: false,
     location: "",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -69,11 +70,26 @@ export default function NewVehiclePage() {
       toast.error("Please fill in all required fields");
       return;
     }
+    if (form.driverAvailable && !form.priceWithDriverPerDay) {
+      toast.error("Please enter the price per day with driver");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
+      fd.append("make", form.make);
+      fd.append("model", form.model);
+      fd.append("year", String(form.year));
+      fd.append("vehicleType", form.vehicleType);
+      fd.append("pricePerDay", form.pricePerDay);
+      fd.append("description", form.description);
+      fd.append("seats", String(form.seats));
+      fd.append("location", form.location);
+      fd.append("withDriver", String(form.driverAvailable));
+      if (form.driverAvailable && form.priceWithDriverPerDay) {
+        fd.append("priceWithDriverPerDay", form.priceWithDriverPerDay);
+      }
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       images.forEach((img) => fd.append("images", img));
 
@@ -127,7 +143,7 @@ export default function NewVehiclePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
                 <input
@@ -149,16 +165,51 @@ export default function NewVehiclePage() {
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
+            </div>
+
+            {/* Pricing tiers */}
+            <div className="border border-gray-100 rounded-xl p-4 space-y-4 bg-gray-50">
+              <p className="text-sm font-medium text-gray-700">Pricing</p>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price/day ($) *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Self-drive price / day ($) *</label>
                 <input
                   type="number"
                   value={form.pricePerDay}
                   onChange={(e) => set("pricePerDay", e.target.value)}
                   placeholder="0"
                   min={1}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
                 />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={form.driverAvailable}
+                    onChange={(e) => {
+                      set("driverAvailable", e.target.checked);
+                      if (!e.target.checked) set("priceWithDriverPerDay", "");
+                    }}
+                    className="w-4 h-4 accent-black"
+                  />
+                  <span className="text-sm text-gray-700 font-medium">Also offer with-driver option</span>
+                </label>
+
+                {form.driverAvailable && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">With-driver price / day ($) *</label>
+                    <input
+                      type="number"
+                      value={form.priceWithDriverPerDay}
+                      onChange={(e) => set("priceWithDriverPerDay", e.target.value)}
+                      placeholder="0"
+                      min={1}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Guests will see both options and can choose at checkout.</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -186,18 +237,6 @@ export default function NewVehiclePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                id="withDriver"
-                type="checkbox"
-                checked={form.withDriver}
-                onChange={(e) => set("withDriver", e.target.checked)}
-                className="w-4 h-4 accent-black"
-              />
-              <label htmlFor="withDriver" className="text-sm text-gray-700">
-                Available with driver
-              </label>
-            </div>
           </div>
 
           {/* Description */}

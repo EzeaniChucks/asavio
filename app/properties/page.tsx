@@ -21,10 +21,12 @@ import { Property, PropertyFilters } from "@/types";
 const FALLBACK_TYPES: string[] = [];
 
 const SORT_OPTIONS = [
+  { label: "Featured", value: "featured" },
+  { label: "Most popular", value: "popular" },
   { label: "Newest first", value: "newest" },
+  { label: "Highest rated", value: "rating" },
   { label: "Price: Low to High", value: "price_asc" },
   { label: "Price: High to Low", value: "price_desc" },
-  { label: "Highest rated", value: "rating" },
 ];
 
 function buildQuery(filters: PropertyFilters & { sort?: string }) {
@@ -57,7 +59,7 @@ function PropertiesContent() {
     bedrooms: searchParams.get("bedrooms")
       ? Number(searchParams.get("bedrooms"))
       : undefined,
-    sort: searchParams.get("sort") || "newest",
+    sort: searchParams.get("sort") || "featured",
   });
 
   const [properties, setProperties] = useState<Property[]>([]);

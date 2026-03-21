@@ -285,7 +285,7 @@ export default function AdminPropertiesPage() {
                         </p>
                       )}
                       <p className="text-sm font-bold text-gray-900 mt-1">
-                        ${p.pricePerNight}
+                        ₦{Number(p.pricePerNight).toLocaleString("en-NG")}
                         <span className="text-xs font-normal text-gray-400">
                           /night
                         </span>

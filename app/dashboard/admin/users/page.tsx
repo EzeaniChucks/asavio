@@ -15,6 +15,11 @@ import {
   FaChevronRight,
   FaUserShield,
   FaUserAlt,
+  FaPercent,
+  FaEye,
+  FaTimes,
+  FaHome,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -47,6 +52,12 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [commissionTarget, setCommissionTarget] = useState<User | null>(null);
+  const [commissionInput, setCommissionInput] = useState("");
+  const [demoteTarget, setDemoteTarget] = useState<User | null>(null);
+  const [hostDetailTarget, setHostDetailTarget] = useState<User | null>(null);
+  const [hostProperties, setHostProperties] = useState<any[]>([]);
+  const [hostDetailLoading, setHostDetailLoading] = useState(false);
 
   const LIMIT = 20;
 
@@ -129,6 +140,61 @@ export default function AdminUsersPage() {
     } finally {
       setActionLoading(null);
       setDeleteTarget(null);
+    }
+  }
+
+  function openCommissionModal(u: User) {
+    setCommissionTarget(u);
+    const existing = u.commissionRateOverride;
+    setCommissionInput(
+      existing !== null && existing !== undefined
+        ? (Number(existing) * 100).toFixed(2)
+        : ""
+    );
+  }
+
+  async function saveCommissionRate() {
+    if (!commissionTarget) return;
+    const raw = commissionInput.trim();
+    const override = raw === "" ? null : parseFloat(raw) / 100;
+    if (override !== null && (isNaN(override) || override < 0 || override > 1)) {
+      toast.error("Enter a percentage between 0 and 100, or leave blank to use the global rate");
+      return;
+    }
+    setActionLoading(commissionTarget.id + "-commission");
+    try {
+      await api.patch(`/admin/users/${commissionTarget.id}/commission`, {
+        commissionRateOverride: override,
+      });
+      toast.success(
+        override === null
+          ? `${commissionTarget.firstName} will now use the global commission rate`
+          : `${commissionTarget.firstName}'s rate set to ${(override * 100).toFixed(2)}%`
+      );
+      setUsers((prev) =>
+        prev.map((x) =>
+          x.id === commissionTarget.id ? { ...x, commissionRateOverride: override } : x
+        )
+      );
+      setCommissionTarget(null);
+    } catch {
+      // handled by interceptor
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function openHostDetail(u: User) {
+    setHostDetailTarget(u);
+    setHostProperties([]);
+    setHostDetailLoading(true);
+    try {
+      const res = await api.get(`/admin/users/${u.id}/properties`);
+      setHostProperties(res.data.data.properties ?? []);
+    } catch {
+      // handled by interceptor
+    } finally {
+      setHostDetailLoading(false);
     }
   }
 
@@ -277,14 +343,24 @@ export default function AdminUsersPage() {
                               {u.isVerified ? "Unverify" : "Verify"}
                             </button>
 
+                            {/* View host detail */}
+                            {u.role === "host" && (
+                              <button
+                                onClick={() => openHostDetail(u)}
+                                title="View host properties"
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 flex items-center justify-center transition"
+                              >
+                                <FaEye className="text-xs" />
+                              </button>
+                            )}
+
                             {/* Change role */}
                             {u.role !== "admin" && (
                               <button
                                 onClick={() =>
-                                  changeRole(
-                                    u,
-                                    u.role === "host" ? "user" : "host"
-                                  )
+                                  u.role === "host"
+                                    ? setDemoteTarget(u)
+                                    : changeRole(u, "host")
                                 }
                                 disabled={actionLoading === u.id + "-role"}
                                 title={
@@ -300,6 +376,28 @@ export default function AdminUsersPage() {
                                   <FaUserShield className="text-xs" />
                                 )}
                                 {u.role === "host" ? "User" : "Host"}
+                              </button>
+                            )}
+
+                            {/* Per-host commission override */}
+                            {u.role === "host" && (
+                              <button
+                                onClick={() => openCommissionModal(u)}
+                                title={
+                                  u.commissionRateOverride !== null && u.commissionRateOverride !== undefined
+                                    ? `Custom rate: ${(Number(u.commissionRateOverride) * 100).toFixed(2)}%`
+                                    : "Set custom commission rate"
+                                }
+                                className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 transition ${
+                                  u.commissionRateOverride !== null && u.commissionRateOverride !== undefined
+                                    ? "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100"
+                                    : "border-gray-200 text-gray-500 hover:bg-gray-100"
+                                }`}
+                              >
+                                <FaPercent className="text-[10px]" />
+                                {u.commissionRateOverride !== null && u.commissionRateOverride !== undefined
+                                  ? `${(Number(u.commissionRateOverride) * 100).toFixed(0)}%`
+                                  : "Rate"}
                               </button>
                             )}
 
@@ -349,6 +447,261 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Commission rate modal */}
+      <AnimatePresence>
+        {commissionTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+            >
+              <h3 className="font-bold text-gray-900 text-base mb-1">
+                Commission rate — {commissionTarget.firstName} {commissionTarget.lastName}
+              </h3>
+              <p className="text-sm text-gray-500 mb-5">
+                Set a custom commission rate for this host. Leave blank to use the global platform rate.
+              </p>
+              <div className="relative mb-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={commissionInput}
+                  onChange={(e) => setCommissionInput(e.target.value)}
+                  placeholder="e.g. 8 (leave blank for global rate)"
+                  className="w-full pr-8 pl-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+                  autoFocus
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+              </div>
+              {commissionInput.trim() !== "" && !isNaN(parseFloat(commissionInput)) && (
+                <p className="text-xs text-gray-500 mb-4">
+                  On a $1,000 booking: platform earns <strong>${(parseFloat(commissionInput) * 10).toFixed(2)}</strong>, host receives <strong>${(1000 - parseFloat(commissionInput) * 10).toFixed(2)}</strong>
+                </p>
+              )}
+              {commissionInput.trim() === "" && (
+                <p className="text-xs text-amber-600 mb-4">Blank = this host uses the global platform rate.</p>
+              )}
+              <div className="flex gap-3 mt-2">
+                <button
+                  onClick={() => setCommissionTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveCommissionRate}
+                  disabled={actionLoading === commissionTarget.id + "-commission"}
+                  className="flex-1 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-gray-900 disabled:opacity-50 transition"
+                >
+                  {actionLoading === commissionTarget.id + "-commission" ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Demotion warning modal */}
+      <AnimatePresence>
+        {demoteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <FaExclamationTriangle className="text-amber-500 text-sm" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">
+                    Demote {demoteTarget.firstName} to User?
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{demoteTarget.email}</p>
+                </div>
+              </div>
+              <ul className="text-sm text-gray-600 space-y-2 mb-6 bg-amber-50 rounded-xl p-4 list-disc list-inside">
+                <li>All their property listings will be <strong>hidden from guests immediately</strong></li>
+                <li>They will <strong>lose access</strong> to the host dashboard and property management</li>
+                <li>Existing bookings remain, but they <strong>cannot manage payouts</strong> as a user</li>
+              </ul>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDemoteTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    changeRole(demoteTarget, "user");
+                    setDemoteTarget(null);
+                  }}
+                  disabled={actionLoading === demoteTarget.id + "-role"}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition"
+                >
+                  Demote anyway
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Host detail slide-over */}
+      <AnimatePresence>
+        {hostDetailTarget && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setHostDetailTarget(null)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                    {hostDetailTarget.firstName[0]}{hostDetailTarget.lastName[0]}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {hostDetailTarget.firstName} {hostDetailTarget.lastName}
+                    </p>
+                    <p className="text-xs text-gray-400">{hostDetailTarget.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setHostDetailTarget(null)}
+                  className="text-gray-400 hover:text-black transition"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              {/* Host meta */}
+              <div className="px-6 py-4 border-b border-gray-100 grid grid-cols-3 gap-3 text-center text-xs">
+                <div className="bg-gray-50 rounded-xl py-3">
+                  <p className="font-semibold text-gray-900 capitalize">
+                    {hostDetailTarget.hostTier?.replace("_", " ") ?? "—"}
+                  </p>
+                  <p className="text-gray-400 mt-0.5">Tier</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl py-3">
+                  <p className="font-semibold text-gray-900">
+                    {hostDetailTarget.responseRate !== undefined && hostDetailTarget.responseRate !== null
+                      ? `${Math.round(Number(hostDetailTarget.responseRate) * 100)}%`
+                      : "—"}
+                  </p>
+                  <p className="text-gray-400 mt-0.5">Response rate</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl py-3">
+                  <p className={`font-semibold capitalize ${
+                    hostDetailTarget.kycStatus === "approved"
+                      ? "text-emerald-600"
+                      : hostDetailTarget.kycStatus === "rejected"
+                      ? "text-red-500"
+                      : "text-amber-500"
+                  }`}>
+                    {hostDetailTarget.kycStatus?.replace("_", " ") ?? "—"}
+                  </p>
+                  <p className="text-gray-400 mt-0.5">KYC</p>
+                </div>
+              </div>
+
+              {/* Properties */}
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <FaHome className="text-gray-400 text-sm" />
+                  <h3 className="font-semibold text-gray-900 text-sm">
+                    Properties
+                    {!hostDetailLoading && (
+                      <span className="ml-1.5 text-xs font-normal text-gray-400">
+                        ({hostProperties.length})
+                      </span>
+                    )}
+                  </h3>
+                </div>
+
+                {hostDetailLoading ? (
+                  <div className="flex justify-center py-10">
+                    <div className="w-6 h-6 border-4 border-black border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : hostProperties.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-10">No properties found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {hostProperties.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 transition"
+                      >
+                        {p.images?.[0]?.url ? (
+                          <img
+                            src={p.images[0].url}
+                            alt={p.title}
+                            className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <FaHome className="text-gray-300 text-xl" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm truncate">{p.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {p.location?.city ?? ""}
+                            {p.location?.state ? `, ${p.location.state}` : ""}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+                              p.status === "approved"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : p.status === "rejected"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}>
+                              {p.status}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              ₦{Number(p.pricePerNight).toLocaleString()}/night
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Delete confirm dialog */}
       <AnimatePresence>

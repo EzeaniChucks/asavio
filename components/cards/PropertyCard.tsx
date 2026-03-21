@@ -6,6 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaStar, FaUsers, FaBed, FaBath } from "react-icons/fa";
 import { Property } from "@/types";
+import { formatPrice } from "@/lib/formatPrice";
+import HostTierBadge from "@/components/ui/HostTierBadge";
 
 interface PropertyCardProps {
   property: Property;
@@ -59,9 +61,14 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
           <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-1 mb-0.5 group-hover:text-black transition-colors">
             {property.title}
           </h3>
-          <p className="text-xs text-gray-400 mb-3">
-            {property.location.city}, {property.location.country}
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-xs text-gray-400">
+              {property.location.city}, {property.location.country}
+            </p>
+            {property.host?.hostTier && property.host.hostTier !== "new_host" && (
+              <HostTierBadge tier={property.host.hostTier} />
+            )}
+          </div>
 
           {/* Stats chips */}
           <div className="flex items-center gap-1.5 flex-wrap mb-4">
@@ -82,7 +89,7 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
           {/* Price row */}
           <div className="flex items-baseline justify-between pt-3 border-t border-gray-100">
             <div>
-              <span className="font-bold text-gray-900 text-base">${property.pricePerNight}</span>
+              <span className="font-bold text-gray-900 text-base">{formatPrice(property.pricePerNight)}</span>
               <span className="text-gray-400 text-xs ml-1">/ night</span>
             </div>
             {property.totalReviews > 0 && (

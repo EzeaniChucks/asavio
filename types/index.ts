@@ -22,6 +22,66 @@ export interface User {
   bankAccountName?: string;
   bankName?: string;
   paystackRecipientCode?: string;
+  commissionRateOverride?: number | null;
+  kycStatus?: "not_submitted" | "pending" | "approved" | "rejected";
+  kycDocumentType?: string | null;
+  kycSubmittedAt?: string | null;
+  kycReviewedAt?: string | null;
+  kycRejectionReason?: string | null;
+  hostTier?: "new_host" | "trusted_host" | "top_host";
+  responseRate?: number;
+  lastSeen?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type NotificationType =
+  | "message"
+  | "booking_request"
+  | "booking_confirmed"
+  | "booking_cancelled"
+  | "booking_completed"
+  | "review_received"
+  | "kyc_approved"
+  | "kyc_rejected"
+  | "listing_approved"
+  | "listing_rejected"
+  | "payout_transferred";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, string> | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  sender?: User;
+  body: string;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  guestId: string;
+  guest?: User;
+  hostId: string;
+  host?: User;
+  propertyId: string | null;
+  property?: Property | null;
+  vehicleId: string | null;
+  vehicle?: Vehicle | null;
+  lastMessageAt: string | null;
+  lastMessagePreview: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +95,7 @@ export interface Property {
   bathrooms: number;
   maxGuests: number;
   pricePerNight: number;
+  purposePricing?: Record<string, number> | null;
   amenities: string[];
   location: {
     address: string;
@@ -82,6 +143,10 @@ export interface Booking {
   totalPrice: number;
   platformCommission: number;
   hostPayout: number;
+  appliedCommissionRate?: number | null;
+  /** ISO 4217 currency code — defaults to "NGN". Use with formatPrice(). */
+  currency?: string;
+  purpose?: string;
   status: "awaiting_payment" | "confirmed" | "cancelled" | "completed";
   paymentMethod: string;
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
@@ -101,6 +166,7 @@ export interface Vehicle {
   year: number;
   vehicleType: string;
   pricePerDay: number;
+  priceWithDriverPerDay?: number | null;
   description: string;
   features: string[];
   images: { url: string; publicId: string }[];

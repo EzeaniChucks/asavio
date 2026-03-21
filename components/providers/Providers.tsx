@@ -3,10 +3,17 @@
 // components/providers/Providers.tsx
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/AuthContext";
+import { useSocket } from "@/hooks/useSocket";
+
+function SocketKeepAlive() {
+  useSocket(); // Connects socket when authenticated, disconnects on logout
+  return null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
+      <SocketKeepAlive />
       {children}
       <Toaster
         position="top-right"

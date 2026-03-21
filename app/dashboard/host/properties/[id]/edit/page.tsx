@@ -36,6 +36,7 @@ export default function EditPropertyPage() {
         bathrooms: data.bathrooms,
         maxGuests: data.maxGuests,
         pricePerNight: data.pricePerNight,
+        purposePricing: data.purposePricing ?? null,
         amenities: data.amenities,
         location: data.location,
       };

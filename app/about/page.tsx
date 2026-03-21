@@ -1,5 +1,17 @@
 // app/about/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description:
+    "Learn about Asavio — Nigeria's premium shortlet and luxury car rental platform. Meet the team redefining luxury rentals across Africa.",
+  openGraph: {
+    title: "About Asavio — Redefining Luxury Rentals in Africa",
+    description:
+      "We connect discerning travellers with premium shortlet properties and luxury vehicles across Nigeria's finest cities.",
+  },
+};
 
 const stats = [
   { value: "500+", label: "Premium Properties" },
@@ -12,7 +24,7 @@ const team = [
   {
     name: "Asama Oluwaseun",
     role: "Chief Executive Officer",
-    bio: "A visionary entrepreneur and hospitality industry trailblazer, Asama conceived Asavio from a deep conviction that Africa deserved a world-class luxury rental experience. With an extraordinary talent for spotting market white space and an unrelenting drive for excellence, she has built Asavio from the ground up — personally curating its host network, defining its brand ethos, and charting its expansion across the continent. Under her leadership, Asavio has become the definitive standard for premium shortlets in Nigeria.",
+    bio: "A visionary entrepreneur and hospitality industry trailblazer, Asama conceived Asavio from a deep conviction that Africa deserved a world-class luxury rental experience. With years of hands-on experience in the rental industry and an extraordinary talent for spotting market white space, he has built Asavio from the ground up — personally curating its host network, defining its brand ethos, and charting its expansion across the continent. Under his leadership, Asavio has become the definitive standard for premium shortlets in Nigeria.",
   },
   {
     name: "Ezeani Chukwudi",

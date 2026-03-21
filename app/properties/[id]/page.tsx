@@ -26,6 +26,8 @@ import BookingWidget from "@/components/booking/BookingWidget";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import GalleryLightbox from "@/components/ui/GalleryLightbox";
+import HostTierBadge from "@/components/ui/HostTierBadge";
+import { FaComments } from "react-icons/fa";
 
 const AMENITY_ICONS: Record<string, string> = {
   wifi: "📶",
@@ -235,22 +237,54 @@ export default function PropertyDetailPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-4 pb-8 border-b border-gray-100 mb-8"
+              className="flex items-center justify-between gap-4 pb-8 border-b border-gray-100 mb-8"
             >
-              <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
-                {property.host?.firstName?.[0]?.toUpperCase() ?? "H"}
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
+                  {property.host?.firstName?.[0]?.toUpperCase() ?? "H"}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900">
+                      Hosted by {property.host?.firstName} {property.host?.lastName}
+                    </p>
+                    {property.host?.hostTier && (
+                      <HostTierBadge tier={property.host.hostTier} size="sm" />
+                    )}
+                  </div>
+                  {property.host?.isVerified && (
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                      <FaCheckCircle className="text-green-500 text-xs" />
+                      Verified host
+                    </p>
+                  )}
+                  {property.host?.responseRate != null && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {Math.round(Number(property.host.responseRate) * 100)}% response rate
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Hosted by {property.host?.firstName} {property.host?.lastName}
-                </p>
-                {property.host?.isVerified && (
-                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
-                    <FaCheckCircle className="text-green-500 text-xs" />
-                    Verified host
-                  </p>
-                )}
-              </div>
+              {isAuthenticated && user && user.id !== property.hostId && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await api.post("/conversations", {
+                        hostId: property.hostId,
+                        propertyId: property.id,
+                      });
+                      const convId = res.data.data.conversation.id;
+                      router.push(`/dashboard/messages?conv=${convId}`);
+                    } catch {
+                      // Error toast shown by api interceptor
+                    }
+                  }}
+                  className="flex items-center gap-2 text-sm font-medium border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+                >
+                  <FaComments className="text-gray-500" />
+                  Message host
+                </button>
+              )}
             </motion.div>
 
             {/* Description */}

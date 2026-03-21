@@ -17,6 +17,9 @@ import {
   FaEnvelope,
   FaArrowRight,
   FaChartBar,
+  FaCog,
+  FaIdCard,
+  FaBullhorn,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -90,6 +93,30 @@ const NAV_LINKS = [
     color: "bg-green-50",
     iconColor: "text-green-600",
   },
+  {
+    href: "/dashboard/admin/kyc",
+    icon: <FaIdCard className="text-xl" />,
+    label: "KYC Verification",
+    desc: "Review and approve host identity documents",
+    color: "bg-rose-50",
+    iconColor: "text-rose-600",
+  },
+  {
+    href: "/dashboard/admin/marketing",
+    icon: <FaBullhorn className="text-xl" />,
+    label: "Marketing",
+    desc: "Send targeted email campaigns to users and hosts",
+    color: "bg-violet-50",
+    iconColor: "text-violet-600",
+  },
+  {
+    href: "/dashboard/admin/settings",
+    icon: <FaCog className="text-xl" />,
+    label: "Settings",
+    desc: "Manage platform commission rate and preferences",
+    color: "bg-slate-50",
+    iconColor: "text-slate-600",
+  },
 ];
 
 const container = {
@@ -155,6 +182,9 @@ export default function AdminDashboard() {
             { href: "/dashboard/admin/bookings", label: "Bookings" },
             { href: "/dashboard/admin/reviews", label: "Reviews" },
             { href: "/dashboard/admin/payouts", label: "Payouts" },
+            { href: "/dashboard/admin/kyc", label: "KYC" },
+            { href: "/dashboard/admin/marketing", label: "Marketing" },
+            { href: "/dashboard/admin/settings", label: "Settings" },
           ].map((tab) => (
             <Link
               key={tab.href}

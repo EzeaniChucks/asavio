@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import toast from "react-hot-toast";
+import { formatPrice } from "@/lib/formatPrice";
 
 type Tab = "all" | "awaiting_payment" | "confirmed" | "completed" | "cancelled";
 
@@ -224,7 +225,7 @@ export default function BookingsPage() {
                       </div>
 
                       <p className="text-sm font-semibold text-gray-900 mt-1.5">
-                        Total: ${Number(booking.totalPrice).toFixed(2)}
+                        Total: {formatPrice(booking.totalPrice, (booking as any).currency)}
                       </p>
                     </div>
                   </div>

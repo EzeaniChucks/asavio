@@ -26,6 +26,9 @@ export default function NewPropertyPage() {
       formData.append("bathrooms", String(data.bathrooms));
       formData.append("maxGuests", String(data.maxGuests));
       formData.append("pricePerNight", String(data.pricePerNight));
+      if (data.purposePricing) {
+        formData.append("purposePricing", JSON.stringify(data.purposePricing));
+      }
       formData.append("amenities", JSON.stringify(data.amenities));
       formData.append("location", JSON.stringify(data.location));
 

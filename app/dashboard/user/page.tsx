@@ -28,6 +28,13 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  awaiting_payment: "Pending",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   awaiting_payment: <FaClock className="text-orange-500" />,
   confirmed: <FaCheckCircle className="text-green-500" />,
@@ -99,7 +106,7 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container py-8 max-w-5xl">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
@@ -186,10 +193,10 @@ export default function UserDashboard() {
                           })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {STATUS_ICONS[booking.status]}
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${STATUS_COLORS[booking.status]}`}>
-                          {booking.status}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="hidden sm:block">{STATUS_ICONS[booking.status]}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLORS[booking.status]}`}>
+                          {STATUS_LABELS[booking.status] ?? booking.status}
                         </span>
                       </div>
                     </Link>
@@ -280,16 +287,16 @@ export default function UserDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between py-2 border-t border-gray-50">
-                    <span className="text-gray-500">Email</span>
-                    <span className="text-gray-900">{user?.email}</span>
+                  <div className="flex justify-between gap-3 py-2 border-t border-gray-50">
+                    <span className="text-gray-500 flex-shrink-0">Email</span>
+                    <span className="text-gray-900 truncate text-right min-w-0">{user?.email}</span>
                   </div>
-                  <div className="flex justify-between py-2 border-t border-gray-50">
-                    <span className="text-gray-500">Phone</span>
-                    <span className="text-gray-900">{user?.phone ?? "—"}</span>
+                  <div className="flex justify-between gap-3 py-2 border-t border-gray-50">
+                    <span className="text-gray-500 flex-shrink-0">Phone</span>
+                    <span className="text-gray-900 text-right">{user?.phone ?? "—"}</span>
                   </div>
-                  <div className="flex justify-between py-2 border-t border-gray-50">
-                    <span className="text-gray-500">Verified</span>
+                  <div className="flex justify-between gap-3 py-2 border-t border-gray-50">
+                    <span className="text-gray-500 flex-shrink-0">Verified</span>
                     <span className={user?.isVerified ? "text-green-600 font-medium" : "text-gray-400"}>
                       {user?.isVerified ? "Yes" : "No"}
                     </span>

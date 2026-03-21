@@ -21,10 +21,11 @@ import {
 import { api } from "@/lib/api";
 import { Vehicle, Review } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
-import toast from "react-hot-toast";
+import { formatPrice } from "@/lib/formatPrice";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import GalleryLightbox from "@/components/ui/GalleryLightbox";
+import VehicleBookingWidget from "@/components/booking/VehicleBookingWidget";
 
 const FEATURE_ICONS: Record<string, string> = {
   gps: "🗺️",
@@ -61,14 +62,6 @@ export default function VehicleDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activeThumb, setActiveThumb] = useState(0);
 
-  // Inquiry form state
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-
-  const today = new Date().toISOString().split("T")[0];
-
   useEffect(() => {
     api
       .get(`/vehicles/${id}`)
@@ -85,26 +78,6 @@ export default function VehicleDetailPage() {
       .catch(() => {});
   }, [id]);
 
-  const days =
-    startDate && endDate
-      ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-
-  const handleInquiry = async () => {
-    if (!isAuthenticated) { router.push("/login"); return; }
-    if (!startDate || !endDate || days <= 0) return;
-
-    setIsSending(true);
-    try {
-      await new Promise((r) => setTimeout(r, 600));
-      toast.success("Inquiry sent! The host will contact you soon.");
-      setStartDate(""); setEndDate(""); setMessage("");
-    } catch {
-      toast.error("Failed to send inquiry");
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -341,91 +314,9 @@ export default function VehicleDetailPage() {
             </div>
           </div>
 
-          {/* Right — Inquiry widget */}
+          {/* Right — Booking widget */}
           <div className="lg:sticky lg:top-24">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="border border-gray-200 rounded-2xl p-6 shadow-lg bg-white"
-            >
-              <div className="flex items-baseline gap-1 mb-5">
-                <span className="text-2xl font-bold">${vehicle.pricePerDay}</span>
-                <span className="text-gray-500">/ day</span>
-              </div>
-
-              <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
-                <div className="grid grid-cols-2">
-                  <div className="p-3 border-r border-gray-200">
-                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                      Pick-up
-                    </label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      min={today}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full text-sm outline-none text-gray-800 cursor-pointer"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                      Return
-                    </label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      min={startDate || today}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full text-sm outline-none text-gray-800 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Message to host (optional)"
-                rows={3}
-                maxLength={500}
-                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-black resize-none"
-              />
-
-              {isAuthenticated ? (
-                <button
-                  onClick={handleInquiry}
-                  disabled={!startDate || !endDate || days <= 0 || isSending}
-                  className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSending ? "Sending…" : !startDate || !endDate ? "Select dates" : "Send inquiry"}
-                </button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="block w-full text-center bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
-                >
-                  Log in to enquire
-                </Link>
-              )}
-
-              {days > 0 && (
-                <div className="mt-5 space-y-2 text-sm border-t border-gray-100 pt-5">
-                  <div className="flex justify-between text-gray-600">
-                    <span>${vehicle.pricePerDay} × {days} {days === 1 ? "day" : "days"}</span>
-                    <span>${(vehicle.pricePerDay * days).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
-                    <span>Estimated total</span>
-                    <span>${(vehicle.pricePerDay * days).toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-
-              <p className="text-center text-xs text-gray-400 mt-4">
-                Sending an inquiry is free — no charge yet
-              </p>
-            </motion.div>
+            <VehicleBookingWidget vehicle={vehicle} />
 
             {isAuthenticated && user?.id === vehicle.hostId && (
               <Link
@@ -435,6 +326,7 @@ export default function VehicleDetailPage() {
                 Edit this listing
               </Link>
             )}
+
           </div>
         </div>
       </div>

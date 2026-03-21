@@ -104,7 +104,7 @@ export default function LuxuryVehicles() {
                 </ul>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-white font-bold text-xl">${vehicle.price}</span>
+                    <span className="text-white font-bold text-xl">₦{Number(vehicle.price).toLocaleString("en-NG")}</span>
                     <span className="text-gray-500 text-sm"> / day</span>
                   </div>
                   <FaCar className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
