@@ -28,12 +28,14 @@ function MessagesContent() {
   const initPropertyId = searchParams.get("propertyId");
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [convsLoading, setConvsLoading] = useState(true);
   const [activeConvId, setActiveConvId] = useState<string | null>(initConvId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mobileShowThread, setMobileShowThread] = useState(!!initConvId || !!initHostId);
@@ -49,6 +51,7 @@ function MessagesContent() {
   // ── Fetch conversations (and auto-create if redirected from property page) ───
   useEffect(() => {
     if (!isAuthenticated) return;
+    setConvsLoading(true);
     api.get("/conversations").then(async (res) => {
       setConversations(res.data.data.conversations);
       // If redirected here post-login with hostId+propertyId, create/fetch conv
@@ -68,7 +71,7 @@ function MessagesContent() {
           // handled by interceptor
         }
       }
-    });
+    }).catch(() => {}).finally(() => setConvsLoading(false));
   }, [isAuthenticated, initHostId, initPropertyId, initConvId]);
 
   // ── Socket setup ─────────────────────────────────────────────────────────────
@@ -135,9 +138,10 @@ function MessagesContent() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    setMessagesLoading(true);
     api.get(`/conversations/${activeConvId}/messages`).then((res) => {
       setMessages(res.data.data.messages);
-    });
+    }).catch(() => {}).finally(() => setMessagesLoading(false));
 
     const socket = getSocket(token);
     socket.emit("join_conversation", activeConvId);
@@ -154,6 +158,7 @@ function MessagesContent() {
     setMobileShowThread(true);
     setMessages([]);
     setTypingUsers(new Set());
+    setMessagesLoading(true);
   };
 
   const sendMessage = async () => {
@@ -194,10 +199,23 @@ function MessagesContent() {
           <h2 className="font-semibold text-gray-900">Messages</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 && (
+          {convsLoading ? (
+            // Skeleton rows while conversations load
+            <div className="divide-y divide-gray-50">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
+                    <div className="h-2.5 bg-gray-100 rounded animate-pulse w-4/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : conversations.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-12">No conversations yet</p>
-          )}
-          {conversations.map((conv) => {
+          ) : null}
+          {!convsLoading && conversations.map((conv) => {
             const other = user
               ? conv.guestId === user.id
                 ? conv.host
@@ -293,7 +311,23 @@ function MessagesContent() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-              {messages.map((msg) => {
+              {messagesLoading ? (
+                // Skeleton bubbles while messages load
+                <>
+                  {[
+                    { mine: false, w: "w-48" },
+                    { mine: true,  w: "w-36" },
+                    { mine: false, w: "w-56" },
+                    { mine: true,  w: "w-44" },
+                    { mine: false, w: "w-32" },
+                  ].map((s, i) => (
+                    <div key={i} className={`flex ${s.mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`${s.w} h-10 bg-gray-200 rounded-2xl animate-pulse ${s.mine ? "rounded-br-sm" : "rounded-bl-sm"}`} />
+                    </div>
+                  ))}
+                </>
+              ) : null}
+              {!messagesLoading && messages.map((msg) => {
                 const isMine = msg.senderId === user?.id;
                 return (
                   <motion.div
@@ -319,6 +353,9 @@ function MessagesContent() {
                   </motion.div>
                 );
               })}
+              {!messagesLoading && messages.length === 0 && (
+                <p className="text-center text-gray-400 text-sm py-8">No messages yet. Say hello!</p>
+              )}
 
               {typingUsers.size > 0 && (
                 <div className="flex justify-start">
