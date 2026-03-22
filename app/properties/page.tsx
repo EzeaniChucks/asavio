@@ -1,7 +1,7 @@
 "use client";
 
 // app/properties/page.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -117,6 +117,25 @@ function PropertiesContent() {
     filters.maxPrice,
     filters.bedrooms,
   ].filter(Boolean).length;
+
+  // Group by propertyType when no specific type filter is active
+  const sections = useMemo(() => {
+    if (filters.propertyType && filters.propertyType !== "All") return null;
+    const order: string[] = [];
+    const map: Record<string, Property[]> = {};
+    for (const p of properties) {
+      const key = p.propertyType.toLowerCase();
+      if (!map[key]) {
+        map[key] = [];
+        order.push(key);
+      }
+      map[key].push(p);
+    }
+    return order.map((type) => ({ type, items: map[type] }));
+  }, [properties, filters.propertyType]);
+
+  const formatSectionLabel = (type: string) =>
+    type.split(/[_\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -235,7 +254,27 @@ function PropertiesContent() {
               Clear all filters
             </button>
           </div>
+        ) : sections ? (
+          // Sectioned view — grouped by property type
+          <div className="space-y-12">
+            {sections.map(({ type, items }) => (
+              <div key={type}>
+                <div className="flex items-baseline gap-3 mb-5">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {formatSectionLabel(type)}
+                  </h2>
+                  <span className="text-sm text-gray-400">{items.length} {items.length === 1 ? "listing" : "listings"}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {items.map((property, i) => (
+                    <PropertyCard key={property.id} property={property} index={i} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
+          // Flat view — specific type selected
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {properties.map((property, i) => (
               <PropertyCard key={property.id} property={property} index={i} />

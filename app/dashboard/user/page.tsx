@@ -253,7 +253,7 @@ export default function UserDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{item.property?.title ?? "Property"}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{item.property?.city}, {item.property?.state}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.property?.location?.city}, {item.property?.location?.state}</p>
                       </div>
                       <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
                         ₦{item.property?.pricePerNight?.toLocaleString()}<span className="text-xs font-normal text-gray-400">/night</span>

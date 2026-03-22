@@ -132,6 +132,13 @@ export default function Navbar() {
                       >
                         My Bookings
                       </Link>
+                      <Link
+                        href="/account/settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Account Settings
+                      </Link>
                       <hr className="my-1 border-gray-100" />
                       <button
                         onClick={() => {
@@ -237,6 +244,13 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                   >
                     Messages
+                  </Link>
+                  <Link
+                    href="/account/settings"
+                    className="text-gray-700 py-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Account Settings
                   </Link>
                   <button
                     onClick={() => {

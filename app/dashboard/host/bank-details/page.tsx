@@ -3,7 +3,11 @@
 // app/dashboard/host/bank-details/page.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaUniversity, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import {
+  FaUniversity,
+  FaCheckCircle,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
@@ -62,9 +66,15 @@ export default function BankDetailsPage() {
 
     setIsVerifying(true);
     api
-      .get(`/payouts/verify-account?accountNumber=${accountNumber}&bankCode=${bankCode}`)
+      .get(
+        `/payouts/verify-account?accountNumber=${accountNumber}&bankCode=${bankCode}`
+      )
       .then((res) => setVerifiedName(res.data.data.accountName))
-      .catch(() => toast.error("Could not verify account. Check the details and try again."))
+      .catch(() =>
+        toast.error(
+          "Could not verify account. Check the details and try again."
+        )
+      )
       .finally(() => setIsVerifying(false));
   }, [accountNumber, bankCode]);
 
@@ -109,9 +119,12 @@ export default function BankDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="container max-w-xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Payout bank details</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          Payout bank details
+        </h1>
         <p className="text-gray-500 text-sm mb-8">
-          Add your Nigerian bank account to receive payouts after guests check in.
+          Add your Nigerian bank account to receive payouts after guests check
+          in.
         </p>
 
         {/* Current details */}
@@ -119,11 +132,15 @@ export default function BankDetailsPage() {
           <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex gap-3">
             <FaCheckCircle className="text-green-500 text-xl shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-green-800">Bank account on file</p>
+              <p className="font-semibold text-green-800">
+                Bank account on file
+              </p>
               <p className="text-sm text-green-700 mt-1">
                 {current.bankName} — {current.bankAccountNumber}
               </p>
-              <p className="text-sm text-green-700">{current.bankAccountName}</p>
+              <p className="text-sm text-green-700">
+                {current.bankAccountName}
+              </p>
             </div>
           </div>
         )}
@@ -132,9 +149,9 @@ export default function BankDetailsPage() {
         <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 text-xs text-amber-800">
           <FaExclamationTriangle className="shrink-0 mt-0.5 text-amber-500" />
           <p>
-            Only Nigerian bank accounts (NUBAN) are supported. Payouts are initiated by Asavio
-            admin after guest check-in. Make sure your account details are correct — we cannot
-            reverse failed transfers.
+            Only Nigerian bank accounts (NUBAN) are supported. Payouts are
+            initiated by Asavio admin after guest check-in. Make sure your
+            account details are correct — we cannot reverse failed transfers.
           </p>
         </div>
 
@@ -147,15 +164,17 @@ export default function BankDetailsPage() {
 
           {/* Bank selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bank
+            </label>
             <select
               value={bankCode}
               onChange={(e) => handleBankChange(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black bg-white"
             >
               <option value="">Select your bank…</option>
-              {banks.map((b) => (
-                <option key={b.code} value={b.code}>
+              {banks.map((b, i) => (
+                <option key={b.code + i} value={b.code}>
                   {b.name}
                 </option>
               ))}
@@ -172,7 +191,9 @@ export default function BankDetailsPage() {
               inputMode="numeric"
               maxLength={10}
               value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                setAccountNumber(e.target.value.replace(/\D/g, ""))
+              }
               placeholder="10-digit account number"
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black"
             />

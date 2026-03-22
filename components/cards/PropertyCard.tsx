@@ -61,7 +61,7 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
           <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-1 mb-0.5 group-hover:text-black transition-colors">
             {property.title}
           </h3>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-0.5">
             <p className="text-xs text-gray-400">
               {property.location.city}, {property.location.country}
             </p>
@@ -69,6 +69,11 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
               <HostTierBadge tier={property.host.hostTier} />
             )}
           </div>
+          {property.host && (
+            <p className="text-xs text-gray-400 mb-1">
+              Hosted by <span className="text-gray-500 font-medium">{property.host.firstName} {property.host.lastName}</span>
+            </p>
+          )}
 
           {/* Stats chips */}
           <div className="flex items-center gap-1.5 flex-wrap mb-4">

@@ -79,7 +79,12 @@ export default function VehicleCard({ vehicle, index = 0 }: VehicleCardProps) {
             {vehicle.year} {vehicle.make} {vehicle.model}
           </h3>
           {vehicle.location && (
-            <p className="text-xs text-gray-400 mb-3">{vehicle.location}</p>
+            <p className="text-xs text-gray-400 mb-0.5">{vehicle.location}</p>
+          )}
+          {vehicle.host && (
+            <p className="text-xs text-gray-400 mb-3">
+              Listed by <span className="text-gray-500 font-medium">{vehicle.host.firstName} {vehicle.host.lastName}</span>
+            </p>
           )}
 
           {/* Stats chips */}

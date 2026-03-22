@@ -1,7 +1,7 @@
 "use client";
 
 // app/vehicles/page.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaSearch, FaSlidersH, FaTimes } from "react-icons/fa";
@@ -84,6 +84,21 @@ function VehiclesContent() {
   };
 
   const activeCount = [activeMin, activeMax, activeSeats, activeDriver].filter(Boolean).length;
+
+  // Group by vehicleType when no specific type filter is active
+  const sections = useMemo(() => {
+    if (activeType) return null;
+    const order: string[] = [];
+    const map: Record<string, Vehicle[]> = {};
+    for (const v of vehicles) {
+      if (!map[v.vehicleType]) {
+        map[v.vehicleType] = [];
+        order.push(v.vehicleType);
+      }
+      map[v.vehicleType].push(v);
+    }
+    return order.map((type) => ({ type, items: map[type] }));
+  }, [vehicles, activeType]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -186,7 +201,25 @@ function VehiclesContent() {
             <p className="text-gray-400 mb-5">Try adjusting your filters</p>
             <button onClick={clearAll} className="btn-primary">Clear filters</button>
           </div>
+        ) : sections ? (
+          // Sectioned view — grouped by vehicle type
+          <div className="space-y-12">
+            {sections.map(({ type, items }) => (
+              <div key={type}>
+                <div className="flex items-baseline gap-3 mb-5">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {TYPE_LABELS[type] ?? (type.charAt(0).toUpperCase() + type.slice(1))}
+                  </h2>
+                  <span className="text-sm text-gray-400">{items.length} {items.length === 1 ? "vehicle" : "vehicles"}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {items.map((v, i) => <VehicleCard key={v.id} vehicle={v} index={i} />)}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
+          // Flat view — specific type selected
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {vehicles.map((v, i) => <VehicleCard key={v.id} vehicle={v} index={i} />)}
           </div>

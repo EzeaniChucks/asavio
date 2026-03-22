@@ -74,7 +74,11 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
 
-  const hasPurposePricing = !!(property.purposePricing && Object.keys(property.purposePricing).length > 0);
+  // Only entries with a valid finite positive price — filters out NaN, null, Infinity, 0, negatives
+  const validPurposeEntries = Object.entries(property.purposePricing ?? {}).filter(
+    ([, price]) => typeof price === "number" && Number.isFinite(price) && price > 0
+  );
+  const hasPurposePricing = validPurposeEntries.length > 0;
 
   // Fetch booked + blocked date ranges once on mount
   useEffect(() => {
@@ -284,7 +288,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
             className="w-full text-sm outline-none text-gray-800 bg-transparent cursor-pointer"
           >
             <option value="">Regular stay (base price)</option>
-            {Object.entries(property.purposePricing!).map(([p, price]) => (
+            {validPurposeEntries.map(([p, price]) => (
               <option key={p} value={p}>
                 {p} — ₦{Number(price).toLocaleString()}/night
               </option>

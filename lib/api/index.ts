@@ -33,9 +33,14 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || "Something went wrong";
 
     if (error.response?.status === 401) {
-      // Handle unauthorized
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      const onAuthPage = typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/login") ||
+         window.location.pathname.startsWith("/register"));
+      // Only redirect to login for expired sessions, not for failed login attempts
+      if (!onAuthPage) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
 
     toast.error(message);
