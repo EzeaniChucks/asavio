@@ -20,6 +20,8 @@ import {
   FaCog,
   FaIdCard,
   FaBullhorn,
+  FaShieldAlt,
+  FaClipboardList,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -116,6 +118,22 @@ const NAV_LINKS = [
     desc: "Manage platform commission rate and preferences",
     color: "bg-slate-50",
     iconColor: "text-slate-600",
+  },
+  {
+    href: "/dashboard/admin/iam",
+    icon: <FaShieldAlt className="text-xl" />,
+    label: "IAM",
+    desc: "Manage admin accounts and their permissions",
+    color: "bg-indigo-50",
+    iconColor: "text-indigo-600",
+  },
+  {
+    href: "/dashboard/admin/audit-logs",
+    icon: <FaClipboardList className="text-xl" />,
+    label: "Audit Logs",
+    desc: "Full history of admin actions on the platform",
+    color: "bg-teal-50",
+    iconColor: "text-teal-600",
   },
 ];
 

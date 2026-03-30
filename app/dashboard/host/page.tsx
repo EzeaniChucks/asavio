@@ -211,6 +211,14 @@ export default function HostDashboard() {
           </div>
         )}
 
+        {/* Co-host notice */}
+        <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6 text-sm text-amber-800">
+          <span className="text-amber-500 mt-0.5 text-base shrink-0">⚠️</span>
+          <p>
+            <span className="font-semibold">Important:</span> If your property will be unavailable for any reason, please inform your co-host at least <span className="font-semibold">6 hours in advance</span>. This ensures guests are not left without accommodation and helps maintain your hosting reputation.
+          </p>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[

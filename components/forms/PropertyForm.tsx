@@ -201,7 +201,7 @@ export default function PropertyForm({
               { key: "bedrooms", label: "Bedrooms", min: 0 },
               { key: "bathrooms", label: "Bathrooms", min: 0 },
               { key: "maxGuests", label: "Max guests", min: 1 },
-              { key: "pricePerNight", label: "Price / night ($)", min: 1 },
+              { key: "pricePerNight", label: "Price / night (₦)", min: 1 },
             ] as const
           ).map(({ key, label, min }) => (
             <div key={key}>
@@ -282,6 +282,14 @@ export default function PropertyForm({
           </div>
         </div>
       </section>
+
+      {/* ── Commission note ────────────────────────────── */}
+      <div className="flex gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 text-sm text-blue-800">
+        <span className="text-blue-400 mt-0.5 text-base shrink-0">ℹ️</span>
+        <p>
+          Asavio charges a small platform commission on every booking. This covers advertising, marketing, and the operational costs that keep our service running — so you get more guests without lifting a finger.
+        </p>
+      </div>
 
       {/* ── Purpose-based pricing ──────────────────────── */}
       <section>

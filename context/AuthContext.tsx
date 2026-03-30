@@ -19,7 +19,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials, redirectTo?: string) => Promise<void>;
   register: (credentials: RegisterCredentials, redirectTo?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -71,10 +71,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("token", token);
     setUser(data.user);
     toast.success(`Welcome to Asavio, ${data.user.firstName}!`);
+    toast("Check your inbox to verify your email address.", { icon: "📧", duration: 6000 });
     router.push(redirectTo || defaultDashboard(data.user.role));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // best-effort — proceed even if the API call fails
+    }
     localStorage.removeItem("token");
     setUser(null);
     toast.success("Logged out successfully");

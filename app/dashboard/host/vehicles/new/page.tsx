@@ -167,11 +167,19 @@ export default function NewVehiclePage() {
               </div>
             </div>
 
+            {/* Commission note */}
+            <div className="flex gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 text-sm text-blue-800">
+              <span className="text-blue-400 mt-0.5 text-base shrink-0">ℹ️</span>
+              <p>
+                Asavio charges a small platform commission on every booking. This covers advertising, marketing, and the operational costs that keep our service running — so you get more guests without lifting a finger.
+              </p>
+            </div>
+
             {/* Pricing tiers */}
             <div className="border border-gray-100 rounded-xl p-4 space-y-4 bg-gray-50">
               <p className="text-sm font-medium text-gray-700">Pricing</p>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Self-drive price / day ($) *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Self-drive price / day (₦) *</label>
                 <input
                   type="number"
                   value={form.pricePerDay}
@@ -198,7 +206,7 @@ export default function NewVehiclePage() {
 
                 {form.driverAvailable && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">With-driver price / day ($) *</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">With-driver price / day (₦) *</label>
                     <input
                       type="number"
                       value={form.priceWithDriverPerDay}

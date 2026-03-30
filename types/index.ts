@@ -17,6 +17,10 @@ export interface User {
   profileImage?: string;
   role: "user" | "host" | "admin";
   isVerified: boolean;
+  isEmailVerified: boolean;
+  isSuperAdmin?: boolean;
+  /** null = super-admin (all permissions). Array = granted permissions. */
+  adminPermissions?: string[] | null;
   bankAccountNumber?: string;
   bankCode?: string;
   bankAccountName?: string;
