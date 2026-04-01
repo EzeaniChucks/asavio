@@ -15,6 +15,8 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaCar,
+  FaToggleOn,
+  FaToggleOff,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -65,6 +67,21 @@ export default function AdminVehiclesPage() {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  async function toggleAvailability(v: Vehicle) {
+    setActionLoading(v.id + "-toggle");
+    try {
+      await api.patch(`/admin/vehicles/${v.id}`, { isAvailable: !v.isAvailable });
+      toast.success(`"${v.year} ${v.make} ${v.model}" marked ${!v.isAvailable ? "available" : "unavailable"}`);
+      setVehicles((prev) =>
+        prev.map((x) => x.id === v.id ? { ...x, isAvailable: !x.isAvailable } : x)
+      );
+    } catch {
+      // handled
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   async function deleteVehicle(id: string) {
     setActionLoading(id + "-delete");
@@ -231,39 +248,51 @@ export default function AdminVehiclesPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                        <FaCar className="text-gray-300 text-xs" />
-                        <span className="text-xs text-gray-400 capitalize flex-1">
-                          {v.vehicleType}
-                        </span>
-
-                        {/* View */}
-                        <Link
-                          href={`/vehicles/${v.id}`}
-                          target="_blank"
-                          className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
-                          title="View listing"
-                        >
-                          <FaExternalLinkAlt className="text-xs" />
-                        </Link>
-
-                        {/* Edit */}
-                        <Link
-                          href={`/dashboard/host/vehicles/${v.id}/edit`}
-                          className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
-                          title="Edit vehicle"
-                        >
-                          <FaEdit className="text-xs" />
-                        </Link>
-
-                        {/* Delete */}
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 flex-wrap">
+                        {/* Toggle availability */}
                         <button
-                          onClick={() => setDeleteTarget(v.id)}
-                          title="Delete vehicle"
-                          className="w-8 h-8 rounded-lg border border-red-100 text-red-400 hover:bg-red-50 flex items-center justify-center transition"
+                          onClick={() => toggleAvailability(v)}
+                          disabled={actionLoading === v.id + "-toggle"}
+                          title={v.isAvailable ? "Hide vehicle" : "Show vehicle"}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
                         >
-                          <FaTrash className="text-xs" />
+                          {v.isAvailable ? (
+                            <FaToggleOn className="text-emerald-500 text-sm" />
+                          ) : (
+                            <FaToggleOff className="text-gray-400 text-sm" />
+                          )}
+                          {v.isAvailable ? "Hide" : "Show"}
                         </button>
+
+                        <div className="ml-auto flex items-center gap-1">
+                          {/* View */}
+                          <Link
+                            href={`/vehicles/${v.id}`}
+                            target="_blank"
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="View listing"
+                          >
+                            <FaExternalLinkAlt className="text-xs" />
+                          </Link>
+
+                          {/* Edit */}
+                          <Link
+                            href={`/dashboard/host/vehicles/${v.id}/edit`}
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="Edit vehicle"
+                          >
+                            <FaEdit className="text-xs" />
+                          </Link>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() => setDeleteTarget(v.id)}
+                            title="Delete vehicle"
+                            className="w-8 h-8 rounded-lg border border-red-100 text-red-400 hover:bg-red-50 flex items-center justify-center transition"
+                          >
+                            <FaTrash className="text-xs" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
