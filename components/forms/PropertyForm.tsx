@@ -59,6 +59,7 @@ export interface PropertyFormData {
   pricePerNight: number;
   purposePricing: Record<string, number> | null;
   amenities: string[];
+  checkInInstructions: string;
   location: {
     address: string;
     city: string;
@@ -92,6 +93,7 @@ export default function PropertyForm({
     pricePerNight: initialData?.pricePerNight ?? 0,
     purposePricing: (initialData as any)?.purposePricing ?? null,
     amenities: initialData?.amenities ?? [],
+    checkInInstructions: (initialData as any)?.checkInInstructions ?? "",
     location: {
       address: initialData?.location?.address ?? "",
       city: initialData?.location?.city ?? "",
@@ -418,6 +420,21 @@ export default function PropertyForm({
         <ImageUpload
           maxFiles={10}
           onFilesChange={(files) => set("images", files)}
+        />
+      </section>
+
+      {/* ── Check-in instructions ───────────────────────── */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Check-in instructions</h2>
+          <p className="text-sm text-gray-400 mt-0.5">Only shared with the guest 24 hours before check-in. Include door codes, parking details, WiFi password, or anything else they need on arrival.</p>
+        </div>
+        <textarea
+          value={form.checkInInstructions}
+          onChange={(e) => set("checkInInstructions", e.target.value)}
+          placeholder="e.g. Apartment 4B, 2nd floor. Door code: 1234. Parking in bay 7. WiFi: AsavioGuest / password123."
+          rows={5}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
         />
       </section>
 

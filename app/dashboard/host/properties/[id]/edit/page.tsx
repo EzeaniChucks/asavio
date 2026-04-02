@@ -68,6 +68,7 @@ export default function EditPropertyPage() {
       fd.append("pricePerNight", String(data.pricePerNight));
       if (data.purposePricing) fd.append("purposePricing", JSON.stringify(data.purposePricing));
       fd.append("amenities", JSON.stringify(data.amenities));
+      fd.append("checkInInstructions", data.checkInInstructions?.trim() ?? "");
       fd.append("location", JSON.stringify(data.location));
       markedForRemoval.forEach((pid) => fd.append("removeImagePublicIds", pid));
       newFiles.forEach((file) => fd.append("images", file));

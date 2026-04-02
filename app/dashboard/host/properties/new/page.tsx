@@ -30,6 +30,7 @@ export default function NewPropertyPage() {
         formData.append("purposePricing", JSON.stringify(data.purposePricing));
       }
       formData.append("amenities", JSON.stringify(data.amenities));
+      if (data.checkInInstructions?.trim()) formData.append("checkInInstructions", data.checkInInstructions.trim());
       formData.append("location", JSON.stringify(data.location));
 
       // Append images
