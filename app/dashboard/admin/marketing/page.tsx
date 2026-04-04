@@ -302,6 +302,7 @@ export default function AdminMarketingPage() {
   const selectedAudience = AUDIENCES.find((a) => a.value === audience)!;
 
   return (
+    <AdminPageGuard permission={P.MANAGE_MARKETING}>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}

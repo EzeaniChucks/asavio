@@ -225,14 +225,7 @@ export default function HostProfileEditPage() {
     }
   };
 
-  const initials =
-    user
-      ? `${(user as Record<string, unknown>).firstName as string ?? ""}${
-          (user as Record<string, unknown>).lastName as string ?? ""
-        }`
-          .slice(0, 2)
-          .toUpperCase()
-      : "?";
+  const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "?";
 
   if (authLoading || isLoadingProfile) {
     return (
@@ -262,7 +255,7 @@ export default function HostProfileEditPage() {
           </div>
           {user && (
             <a
-              href={`/hosts/${(user as Record<string, unknown>).id as string}`}
+              href={`/hosts/${user?.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-rose-600 hover:text-rose-700 text-sm font-medium transition-colors"
@@ -578,8 +571,6 @@ export default function HostProfileEditPage() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
       </div>
     </div>
   );
