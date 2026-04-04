@@ -120,9 +120,16 @@ export default function PublicHostProfilePage() {
   const tier = host.hostTier ? tierConfig[host.hostTier] : null;
   const displayProperties = properties.slice(0, 6);
 
+  const languages = (() => {
+    const v = host.languages;
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    try { const p = JSON.parse(v as unknown as string); return Array.isArray(p) ? p : []; } catch { return []; }
+  })();
+
   const detailRows = [
-    host.languages?.length
-      ? { icon: <FaGlobe className="w-4 h-4 text-gray-400" />, label: "Speaks", value: host.languages.join(", ") }
+    languages.length
+      ? { icon: <FaGlobe className="w-4 h-4 text-gray-400" />, label: "Speaks", value: languages.join(", ") }
       : null,
     host.occupation
       ? { icon: <FaBriefcase className="w-4 h-4 text-gray-400" />, label: "Works as", value: host.occupation }

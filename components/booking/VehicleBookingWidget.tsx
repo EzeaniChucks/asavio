@@ -72,6 +72,14 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
   const [specialRequests, setSpecialRequests] = useState("");
   const [showRequests, setShowRequests] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   // Calendar state
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selection, setSelection] = useState({
@@ -243,18 +251,50 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
         </button>
 
         {calendarOpen && (
-          <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-2 shadow-2xl rounded-2xl overflow-hidden border border-gray-200 bg-white">
-            <DateRange
-              ranges={[selection]}
-              onChange={handleRangeChange}
-              disabledDay={isDateBlocked}
-              minDate={today}
-              months={2}
-              direction="horizontal"
-              showDateDisplay={false}
-              rangeColors={["#000000"]}
-            />
-          </div>
+          isMobile ? (
+            <div className="fixed inset-0 z-50 flex flex-col bg-black/50" onClick={() => setCalendarOpen(false)}>
+              <div
+                className="mt-auto bg-white rounded-t-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                  <p className="font-semibold text-gray-900 text-sm">Select dates</p>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarOpen(false)}
+                    className="text-gray-400 hover:text-black text-lg leading-none p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="overflow-y-auto max-h-[75vh] flex flex-col items-center">
+                  <DateRange
+                    ranges={[selection]}
+                    onChange={handleRangeChange}
+                    disabledDay={isDateBlocked}
+                    minDate={today}
+                    months={2}
+                    direction="vertical"
+                    showDateDisplay={false}
+                    rangeColors={["#000000"]}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-2 shadow-2xl rounded-2xl overflow-hidden border border-gray-200 bg-white">
+              <DateRange
+                ranges={[selection]}
+                onChange={handleRangeChange}
+                disabledDay={isDateBlocked}
+                minDate={today}
+                months={2}
+                direction="horizontal"
+                showDateDisplay={false}
+                rangeColors={["#000000"]}
+              />
+            </div>
+          )
         )}
       </div>
 

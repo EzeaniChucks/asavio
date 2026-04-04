@@ -21,6 +21,8 @@ import {
   FaExclamationTriangle,
   FaExternalLinkAlt,
   FaCrown,
+  FaPhone,
+  FaEnvelope,
 } from "react-icons/fa";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
@@ -595,6 +597,22 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {hostDetailTarget.phone && (
+                    <a
+                      href={`tel:${hostDetailTarget.phone}`}
+                      className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50 transition"
+                      title={`Call ${hostDetailTarget.phone}`}
+                    >
+                      <FaPhone className="text-xs" />
+                    </a>
+                  )}
+                  <a
+                    href={`mailto:${hostDetailTarget.email}`}
+                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition"
+                    title={`Email ${hostDetailTarget.email}`}
+                  >
+                    <FaEnvelope className="text-xs" />
+                  </a>
                   <a
                     href={`/hosts/${hostDetailTarget.id}`}
                     target="_blank"
@@ -685,18 +703,22 @@ export default function AdminUsersPage() {
                       <p className="text-gray-700 font-medium mt-0.5">{hostDetailTarget.school}</p>
                     </div>
                   )}
-                  {hostDetailTarget.languages && hostDetailTarget.languages.length > 0 && (
-                    <div className="col-span-2">
-                      <span className="text-gray-400">Languages</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {hostDetailTarget.languages.map((lang) => (
-                          <span key={lang} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
-                            {lang}
-                          </span>
-                        ))}
+                  {(() => {
+                    const v = hostDetailTarget.languages;
+                    const langs: string[] = Array.isArray(v) ? v : (() => { try { const p = JSON.parse(v as any); return Array.isArray(p) ? p : []; } catch { return []; } })();
+                    return langs.length > 0 ? (
+                      <div className="col-span-2">
+                        <span className="text-gray-400">Languages</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {langs.map((lang) => (
+                            <span key={lang} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                              {lang}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ) : null;
+                  })()}
                   {hostDetailTarget.whyIHost && (
                     <div className="col-span-2">
                       <span className="text-gray-400">Why they host</span>

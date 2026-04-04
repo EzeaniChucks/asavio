@@ -47,6 +47,21 @@ const AMENITY_ICONS: Record<string, string> = {
   fireplace: "🔥",
 };
 
+/** Safely coerce a value that might be a JSON string, array, or null to string[]. */
+function toStringArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val as string[];
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function getAmenityIcon(amenity: string) {
   const key = amenity.toLowerCase().replace(/\s+/g, "");
   for (const [k, icon] of Object.entries(AMENITY_ICONS)) {
@@ -359,37 +374,43 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Amenities */}
-            {property.amenities?.length > 0 && (
-              <div className="pb-8 border-b border-gray-100 mb-8">
-                <h2 className="text-xl font-semibold mb-5">What this place offers</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {property.amenities.map((amenity) => (
-                    <div key={amenity} className="flex items-center gap-3 text-gray-700">
-                      <span className="text-xl">{getAmenityIcon(amenity)}</span>
-                      <span className="capitalize">{amenity}</span>
-                    </div>
-                  ))}
+            {(() => {
+              const amenities = toStringArray(property.amenities);
+              return amenities.length > 0 ? (
+                <div className="pb-8 border-b border-gray-100 mb-8">
+                  <h2 className="text-xl font-semibold mb-5">What this place offers</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {amenities.map((amenity) => (
+                      <div key={amenity} className="flex items-center gap-3 text-gray-700">
+                        <span className="text-xl">{getAmenityIcon(amenity)}</span>
+                        <span className="capitalize">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : null;
+            })()}
 
             {/* Nearby places */}
-            {property.nearbyPlaces && property.nearbyPlaces.length > 0 && (
-              <div className="pb-8 border-b border-gray-100 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Nearby places</h2>
-                <div className="flex flex-wrap gap-2">
-                  {property.nearbyPlaces.map((place) => (
-                    <span
-                      key={place}
-                      className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full"
-                    >
-                      <span>📍</span>
-                      {place}
-                    </span>
-                  ))}
+            {(() => {
+              const nearbyPlaces = toStringArray(property.nearbyPlaces);
+              return nearbyPlaces.length > 0 ? (
+                <div className="pb-8 border-b border-gray-100 mb-8">
+                  <h2 className="text-xl font-semibold mb-4">Nearby places</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {nearbyPlaces.map((place) => (
+                      <span
+                        key={place}
+                        className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full"
+                      >
+                        <span>📍</span>
+                        {place}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : null;
+            })()}
 
             {/* Location */}
             <div className="pb-8 border-b border-gray-100 mb-8">

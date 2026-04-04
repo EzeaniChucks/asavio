@@ -502,17 +502,26 @@ export default function HostDashboard() {
                           </div>
                         </div>
                         <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-                          vehicle.isAvailable ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                          vehicle.status === "pending" ? "bg-yellow-100 text-yellow-700"
+                          : vehicle.status === "rejected" ? "bg-red-100 text-red-600"
+                          : vehicle.isAvailable ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
                         }`}>
-                          {vehicle.isAvailable ? "Live" : "Hidden"}
+                          {vehicle.status === "pending" ? "Pending review"
+                            : vehicle.status === "rejected" ? "Not approved"
+                            : vehicle.isAvailable ? "Live" : "Hidden"}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <Link href={`/vehicles/${vehicle.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="View"><FaEye /></Link>
-                      <button onClick={() => toggleVehicleAvailability(vehicle)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={vehicle.isAvailable ? "Hide" : "Publish"}>
-                        {vehicle.isAvailable ? <FaToggleOn className="text-green-500" /> : <FaToggleOff />}
-                      </button>
+                      {vehicle.status === "approved" && (
+                        <Link href={`/vehicles/${vehicle.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="View"><FaEye /></Link>
+                      )}
+                      {vehicle.status === "approved" && (
+                        <button onClick={() => toggleVehicleAvailability(vehicle)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={vehicle.isAvailable ? "Hide" : "Publish"}>
+                          {vehicle.isAvailable ? <FaToggleOn className="text-green-500" /> : <FaToggleOff />}
+                        </button>
+                      )}
                       <Link href={`/dashboard/host/vehicles/${vehicle.id}/edit`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="Edit"><FaEdit /></Link>
                       <button onClick={() => deleteVehicle(vehicle.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><FaTrash /></button>
                     </div>

@@ -5,6 +5,20 @@ import { useState } from "react";
 import ImageUpload from "./ImageUpload";
 import { FaPlus, FaTimes } from "react-icons/fa";
 
+function toStringArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val as string[];
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 const PROPERTY_TYPES = [
   "Apartment",
   "Villa",
@@ -97,8 +111,8 @@ export default function PropertyForm({
     pricePerNight: initialData?.pricePerNight ?? 0,
     purposePricing: (initialData as any)?.purposePricing ?? null,
     cautionFee: (initialData as any)?.cautionFee != null ? String((initialData as any).cautionFee) : "",
-    nearbyPlaces: (initialData as any)?.nearbyPlaces ?? [],
-    amenities: initialData?.amenities ?? [],
+    nearbyPlaces: toStringArray((initialData as any)?.nearbyPlaces),
+    amenities: toStringArray(initialData?.amenities),
     checkInInstructions: (initialData as any)?.checkInInstructions ?? "",
     location: {
       address: initialData?.location?.address ?? "",

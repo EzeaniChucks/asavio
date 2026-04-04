@@ -25,6 +25,7 @@ import { Property } from "@/types";
 import toast from "react-hot-toast";
 import AdminPageGuard from "@/components/admin/AdminPageGuard";
 import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
+import AdminGalleryModal from "@/components/admin/AdminGalleryModal";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
@@ -49,6 +50,7 @@ export default function AdminPropertiesPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Property | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [galleryTarget, setGalleryTarget] = useState<Property | null>(null);
 
   const LIMIT = 20;
 
@@ -252,13 +254,16 @@ export default function AdminPropertiesPage() {
                     className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all"
                   >
                     {/* Image */}
-                    <div className="relative h-40 bg-gray-100">
+                    <div
+                      className="relative h-40 bg-gray-100 cursor-pointer group"
+                      onClick={() => p.images?.length && setGalleryTarget(p)}
+                    >
                       {imgUrl ? (
                         <Image
                           src={imgUrl}
                           alt={p.title}
                           fill
-                          className="object-cover"
+                          className="object-cover group-hover:opacity-90 transition-opacity"
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full text-4xl">
@@ -266,6 +271,18 @@ export default function AdminPropertiesPage() {
                         </div>
                       )}
                       <div className="absolute top-2 right-2">{statusBadge(p)}</div>
+                      {p.images?.length > 1 && (
+                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                          {p.images.length} photos
+                        </span>
+                      )}
+                      {p.images?.length > 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="bg-black/50 text-white text-xs px-3 py-1.5 rounded-lg font-medium">
+                            View gallery
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Info */}
@@ -484,6 +501,15 @@ export default function AdminPropertiesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Gallery modal */}
+      {galleryTarget && galleryTarget.images?.length > 0 && (
+        <AdminGalleryModal
+          images={galleryTarget.images}
+          title={galleryTarget.title}
+          onClose={() => setGalleryTarget(null)}
+        />
+      )}
     </div>
     </AdminPageGuard>
   );

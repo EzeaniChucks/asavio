@@ -223,6 +223,8 @@ export interface Vehicle {
   description: string;
   features: string[];
   images: { url: string; publicId: string }[];
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string | null;
   isAvailable: boolean;
   location?: string;
   seats: number;
