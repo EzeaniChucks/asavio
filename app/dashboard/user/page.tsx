@@ -284,8 +284,12 @@ export default function UserDashboard() {
 
               {/* Avatar */}
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl">
-                  {user?.firstName?.[0]?.toUpperCase()}
+                <div className="relative w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl overflow-hidden flex-shrink-0">
+                  {user?.profileImage ? (
+                    <Image src={user.profileImage} alt={user.firstName} fill className="object-cover" />
+                  ) : (
+                    user?.firstName?.[0]?.toUpperCase()
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">
@@ -365,8 +369,14 @@ export default function UserDashboard() {
             </div>
 
             <Link
-              href="/bookings"
+              href="/dashboard/user/profile"
               className="block w-full text-center py-3 bg-black text-white rounded-xl font-semibold text-sm hover:bg-gray-800 transition-colors"
+            >
+              Edit profile
+            </Link>
+            <Link
+              href="/bookings"
+              className="block w-full text-center py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-black transition-colors"
             >
               All bookings
             </Link>

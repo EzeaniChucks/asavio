@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 type KycStatus = "pending" | "approved" | "rejected";
 
@@ -369,12 +371,14 @@ function AdminKycContent() {
 
 export default function AdminKycPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <AdminKycContent />
-    </Suspense>
+    <AdminPageGuard permission={P.MANAGE_KYC}>
+      <Suspense fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <AdminKycContent />
+      </Suspense>
+    </AdminPageGuard>
   );
 }

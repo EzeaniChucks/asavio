@@ -10,6 +10,8 @@ import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 function formatDate(d: string | Date) {
   return new Date(d).toLocaleDateString("en-GB", {
@@ -66,6 +68,7 @@ export default function AdminPayoutsPage() {
   }
 
   return (
+    <AdminPageGuard permission={P.MANAGE_PAYOUTS}>
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="container max-w-5xl">
         <div className="flex items-center justify-between mb-8">
@@ -203,5 +206,6 @@ export default function AdminPayoutsPage() {
         )}
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

@@ -3,8 +3,10 @@
 // app/dashboard/host/profile/page.tsx
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
+  FaArrowLeft,
   FaCamera,
   FaPlus,
   FaTimes,
@@ -59,6 +61,18 @@ export default function HostProfileEditPage() {
   const [school, setSchool] = useState("");
   const [whyIHost, setWhyIHost] = useState("");
 
+  // Basic info
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName]   = useState("");
+  const [phone, setPhone]         = useState("");
+  const [savingInfo, setSavingInfo] = useState(false);
+
+  // Password
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword]         = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword]   = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -84,18 +98,22 @@ export default function HostProfileEditPage() {
         setCity(u.city ?? "");
         setSchool(u.school ?? "");
         setWhyIHost(u.whyIHost ?? "");
+        setFirstName(u.firstName ?? "");
+        setLastName(u.lastName ?? "");
+        setPhone(u.phone ?? "");
       })
       .catch(() => {
-        // Fall back to user from context
         if (user) {
-          const u = user as Record<string, unknown>;
-          setProfileImage((u.profileImage as string) ?? "");
-          setBio((u.bio as string) ?? "");
-          setLanguages(Array.isArray(u.languages) ? (u.languages as string[]) : []);
-          setOccupation((u.occupation as string) ?? "");
-          setCity((u.city as string) ?? "");
-          setSchool((u.school as string) ?? "");
-          setWhyIHost((u.whyIHost as string) ?? "");
+          setProfileImage(user.profileImage ?? "");
+          setBio((user as any).bio ?? "");
+          setLanguages(Array.isArray((user as any).languages) ? (user as any).languages : []);
+          setOccupation((user as any).occupation ?? "");
+          setCity((user as any).city ?? "");
+          setSchool((user as any).school ?? "");
+          setWhyIHost((user as any).whyIHost ?? "");
+          setFirstName(user.firstName ?? "");
+          setLastName(user.lastName ?? "");
+          setPhone(user.phone ?? "");
         }
       })
       .finally(() => setIsLoadingProfile(false));
@@ -116,7 +134,7 @@ export default function HostProfileEditPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const formData = new FormData();
-    formData.append("photo", file);
+    formData.append("profileImage", file);
     setIsUploading(true);
     try {
       const res = await api.post("/users/profile/photo", formData, {
@@ -153,6 +171,37 @@ export default function HostProfileEditPage() {
     if (e.key === "Enter") {
       e.preventDefault();
       addLanguage();
+    }
+  };
+
+  // Save basic info
+  const handleSaveInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingInfo(true);
+    try {
+      await api.patch("/auth/me", { firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim() });
+      toast.success("Personal info updated");
+    } catch {
+      // interceptor handles toast
+    } finally {
+      setSavingInfo(false);
+    }
+  };
+
+  // Change password
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) { toast.error("New passwords do not match"); return; }
+    if (newPassword.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    setSavingPassword(true);
+    try {
+      await api.patch("/auth/change-password", { currentPassword, newPassword });
+      toast.success("Password changed successfully");
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    } catch {
+      // interceptor handles toast
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -196,6 +245,13 @@ export default function HostProfileEditPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
+        <Link
+          href="/dashboard/host"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors"
+        >
+          <FaArrowLeft /> Back to dashboard
+        </Link>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -289,6 +345,57 @@ export default function HostProfileEditPage() {
               onChange={handlePhotoChange}
             />
           </div>
+        </div>
+
+        {/* Personal info */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-800 mb-4">Personal information</h2>
+          <form onSubmit={handleSaveInfo} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                <input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                <input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                value={user?.email ?? ""}
+                disabled
+                className="w-full border border-gray-100 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-400 mt-1">Email cannot be changed.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+234 800 000 0000"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" disabled={savingInfo} className="btn-primary disabled:opacity-50">
+                {savingInfo ? "Saving…" : "Save info"}
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Bio */}
@@ -416,16 +523,63 @@ export default function HostProfileEditPage() {
           <p className="text-xs text-gray-400 text-right mt-1">{whyIHost.length}/300</p>
         </div>
 
-        {/* Save button */}
-        <div className="pb-6">
+        {/* Save profile button */}
+        <div>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-2xl transition-colors disabled:opacity-60 text-sm"
+            className="w-full py-3.5 bg-black hover:bg-gray-800 text-white font-semibold rounded-2xl transition-colors disabled:opacity-60 text-sm"
           >
             {isSaving ? "Saving…" : "Save profile"}
           </button>
         </div>
+
+        {/* Change password */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm pb-10">
+          <h2 className="text-base font-semibold text-gray-800 mb-4">Change password</h2>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" disabled={savingPassword} className="btn-primary disabled:opacity-50">
+                {savingPassword ? "Updating…" : "Update password"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
       </div>
     </div>
   );

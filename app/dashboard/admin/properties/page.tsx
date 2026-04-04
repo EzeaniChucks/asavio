@@ -23,6 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
 import toast from "react-hot-toast";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
@@ -160,6 +162,7 @@ export default function AdminPropertiesPage() {
   }
 
   return (
+    <AdminPageGuard permission={P.MANAGE_PROPERTIES}>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
@@ -482,5 +485,6 @@ export default function AdminPropertiesPage() {
         )}
       </AnimatePresence>
     </div>
+    </AdminPageGuard>
   );
 }

@@ -9,6 +9,8 @@ import { FaArrowLeft, FaPercent, FaSave, FaInfoCircle } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 interface PlatformSettings {
   commissionRate: number;
@@ -78,6 +80,7 @@ export default function AdminSettingsPage() {
   const currentRate = settings ? Number(settings.commissionRate) * 100 : null;
 
   return (
+    <AdminPageGuard permission={P.MANAGE_SETTINGS}>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
@@ -199,5 +202,6 @@ export default function AdminSettingsPage() {
         )}
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

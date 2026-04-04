@@ -26,6 +26,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import StatsCard from "@/components/admin/StatsCard";
+import { hasAdminPermission, ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 interface AdminStats {
   totalUsers: number;
@@ -38,9 +39,11 @@ interface AdminStats {
   totalRevenue: number;
 }
 
-const NAV_LINKS = [
+const ALL_NAV_LINKS = [
   {
     href: "/dashboard/admin/users",
+    permission: P.MANAGE_USERS,
+    tabLabel: "Users",
     icon: <FaUsers className="text-xl" />,
     label: "Users",
     desc: "Manage all registered users and hosts",
@@ -49,6 +52,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/properties",
+    permission: P.MANAGE_PROPERTIES,
+    tabLabel: "Properties",
     icon: <FaHome className="text-xl" />,
     label: "Properties",
     desc: "Review and moderate property listings",
@@ -57,6 +62,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/vehicles",
+    permission: P.MANAGE_VEHICLES,
+    tabLabel: "Vehicles",
     icon: <FaCar className="text-xl" />,
     label: "Vehicles",
     desc: "Manage vehicle listings and availability",
@@ -65,6 +72,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/bookings",
+    permission: P.MANAGE_BOOKINGS,
+    tabLabel: "Bookings",
     icon: <FaCalendarAlt className="text-xl" />,
     label: "Bookings",
     desc: "Track and update booking statuses",
@@ -73,22 +82,18 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/reviews",
+    permission: P.MANAGE_REVIEWS,
+    tabLabel: "Reviews",
     icon: <FaStar className="text-xl" />,
     label: "Reviews",
-    desc: "Moderate reviews and send broadcasts",
+    desc: "Moderate guest reviews",
     color: "bg-yellow-50",
     iconColor: "text-yellow-600",
   },
   {
-    href: "/dashboard/admin/reviews",
-    icon: <FaEnvelope className="text-xl" />,
-    label: "Email Broadcast",
-    desc: "Send announcements to users and hosts",
-    color: "bg-red-50",
-    iconColor: "text-red-600",
-  },
-  {
     href: "/dashboard/admin/payouts",
+    permission: P.MANAGE_PAYOUTS,
+    tabLabel: "Payouts",
     icon: <FaMoneyBillWave className="text-xl" />,
     label: "Payouts",
     desc: "Transfer earnings to hosts after check-in",
@@ -97,6 +102,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/kyc",
+    permission: P.MANAGE_KYC,
+    tabLabel: "KYC",
     icon: <FaIdCard className="text-xl" />,
     label: "KYC Verification",
     desc: "Review and approve host identity documents",
@@ -105,6 +112,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/marketing",
+    permission: P.MANAGE_MARKETING,
+    tabLabel: "Marketing",
     icon: <FaBullhorn className="text-xl" />,
     label: "Marketing",
     desc: "Send targeted email campaigns to users and hosts",
@@ -113,6 +122,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/settings",
+    permission: P.MANAGE_SETTINGS,
+    tabLabel: "Settings",
     icon: <FaCog className="text-xl" />,
     label: "Settings",
     desc: "Manage platform commission rate and preferences",
@@ -121,6 +132,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/iam",
+    permission: P.MANAGE_ADMINS,
+    tabLabel: "IAM",
     icon: <FaShieldAlt className="text-xl" />,
     label: "IAM",
     desc: "Manage admin accounts and their permissions",
@@ -129,6 +142,8 @@ const NAV_LINKS = [
   },
   {
     href: "/dashboard/admin/audit-logs",
+    permission: P.VIEW_AUDIT_LOGS,
+    tabLabel: "Audit Logs",
     icon: <FaClipboardList className="text-xl" />,
     label: "Audit Logs",
     desc: "Full history of admin actions on the platform",
@@ -165,6 +180,8 @@ export default function AdminDashboard() {
       .finally(() => setIsLoading(false));
   }, [user]);
 
+  const navLinks = ALL_NAV_LINKS.filter((l) => hasAdminPermission(user, l.permission));
+
   if (authLoading || !user || user.role !== "admin") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -190,30 +207,21 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Tab nav */}
+        {/* Tab nav — filtered by permission */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto pb-0 scrollbar-hide">
-          {[
-            { href: "/dashboard/admin", label: "Overview" },
-            { href: "/dashboard/admin/users", label: "Users" },
-            { href: "/dashboard/admin/properties", label: "Properties" },
-            { href: "/dashboard/admin/vehicles", label: "Vehicles" },
-            { href: "/dashboard/admin/bookings", label: "Bookings" },
-            { href: "/dashboard/admin/reviews", label: "Reviews" },
-            { href: "/dashboard/admin/payouts", label: "Payouts" },
-            { href: "/dashboard/admin/kyc", label: "KYC" },
-            { href: "/dashboard/admin/marketing", label: "Marketing" },
-            { href: "/dashboard/admin/settings", label: "Settings" },
-          ].map((tab) => (
+          <Link
+            href="/dashboard/admin"
+            className="px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-black text-black"
+          >
+            Overview
+          </Link>
+          {navLinks.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                tab.href === "/dashboard/admin"
-                  ? "border-black text-black"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className="px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-900 transition-colors"
             >
-              {tab.label}
+              {tab.tabLabel}
             </Link>
           ))}
         </div>
@@ -329,7 +337,7 @@ export default function AdminDashboard() {
             animate="show"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <motion.div key={link.label + link.href} variants={item}>
                 <Link
                   href={link.href}

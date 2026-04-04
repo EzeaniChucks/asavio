@@ -7,6 +7,8 @@ import { FaArrowLeft, FaPlus, FaTrash, FaEdit, FaShieldAlt, FaTimes } from "reac
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 const PERMISSIONS = [
   { key: "manage_users",      label: "Manage Users" },
@@ -122,6 +124,7 @@ export default function IAMPage() {
   };
 
   return (
+    <AdminPageGuard permission={P.MANAGE_ADMINS}>
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8 max-w-4xl">
         <Link
@@ -338,5 +341,6 @@ export default function IAMPage() {
         </div>
       )}
     </div>
+    </AdminPageGuard>
   );
 }

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { FaArrowLeft, FaSearch, FaFilter } from "react-icons/fa";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 interface AuditLog {
   id: string;
@@ -88,6 +90,7 @@ export default function AuditLogsPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
+    <AdminPageGuard permission={P.VIEW_AUDIT_LOGS}>
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8 max-w-5xl">
         <Link
@@ -192,5 +195,6 @@ export default function AuditLogsPage() {
         )}
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

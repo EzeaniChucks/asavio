@@ -20,6 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import AdminPageGuard from "@/components/admin/AdminPageGuard";
+import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 
 // ── Audience options ────────────────────────────────────────────
 
@@ -658,5 +660,6 @@ export default function AdminMarketingPage() {
         </div>
       )}
     </div>
+    </AdminPageGuard>
   );
 }
