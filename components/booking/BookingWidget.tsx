@@ -205,13 +205,23 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
       </div>
 
       {/* Platform-only warning */}
-      <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800">
+      <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-xs text-amber-800">
         <FaExclamationTriangle className="shrink-0 mt-0.5 text-amber-500" />
         <p>
           <strong>Book and pay on Asavio only.</strong> Payments made outside the platform are not
           protected.
         </p>
       </div>
+
+      {/* Caution fee notice */}
+      {property.cautionFee != null && Number(property.cautionFee) > 0 && (
+        <div className="flex gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-xs text-blue-800">
+          <span className="shrink-0">🔒</span>
+          <p>
+            <strong>Caution fee: ₦{Number(property.cautionFee).toLocaleString("en-NG")}</strong> — refundable deposit collected by the host on arrival. Not charged through Asavio.
+          </p>
+        </div>
+      )}
 
       {/* Date picker trigger */}
       <div ref={calendarRef} className="relative mb-3">

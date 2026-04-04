@@ -9,7 +9,6 @@ import {
   FaArrowLeft,
   FaSearch,
   FaCheckCircle,
-  FaTimesCircle,
   FaTrash,
   FaChevronLeft,
   FaChevronRight,
@@ -20,7 +19,10 @@ import {
   FaTimes,
   FaHome,
   FaExclamationTriangle,
+  FaExternalLinkAlt,
+  FaCrown,
 } from "react-icons/fa";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { User } from "@/types";
@@ -53,6 +55,7 @@ export default function AdminUsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [commissionTarget, setCommissionTarget] = useState<User | null>(null);
+
   const [commissionInput, setCommissionInput] = useState("");
   const [demoteTarget, setDemoteTarget] = useState<User | null>(null);
   const [hostDetailTarget, setHostDetailTarget] = useState<User | null>(null);
@@ -93,25 +96,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     setPage(1);
   }, [search, roleFilter]);
-
-  async function toggleVerified(u: User) {
-    setActionLoading(u.id + "-verify");
-    try {
-      await api.patch(`/admin/users/${u.id}`, { isVerified: !u.isVerified });
-      toast.success(
-        `${u.firstName} ${u.isVerified ? "unverified" : "verified"}`
-      );
-      setUsers((prev) =>
-        prev.map((x) =>
-          x.id === u.id ? { ...x, isVerified: !x.isVerified } : x
-        )
-      );
-    } catch {
-      // handled
-    } finally {
-      setActionLoading(null);
-    }
-  }
 
   async function changeRole(u: User, role: "host" | "user") {
     setActionLoading(u.id + "-role");
@@ -276,7 +260,7 @@ export default function AdminUsersPage() {
                       Role
                     </th>
                     <th className="text-left px-5 py-3 font-medium text-gray-500">
-                      Verified
+                      KYC
                     </th>
                     <th className="text-left px-5 py-3 font-medium text-gray-500">
                       Joined
@@ -320,10 +304,21 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          {u.isVerified ? (
-                            <FaCheckCircle className="text-emerald-500 text-base" />
+                          {u.role === "host" ? (
+                            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                              u.kycStatus === "approved"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : u.kycStatus === "pending"
+                                ? "bg-amber-100 text-amber-700"
+                                : u.kycStatus === "rejected"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-gray-100 text-gray-400"
+                            }`}>
+                              {u.kycStatus === "approved" && <FaCheckCircle className="text-[10px]" />}
+                              {u.kycStatus?.replace("_", " ") ?? "not submitted"}
+                            </span>
                           ) : (
-                            <FaTimesCircle className="text-gray-300 text-base" />
+                            <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
                         <td className="px-5 py-3.5 text-gray-400 text-xs">
@@ -331,18 +326,6 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Toggle verified */}
-                            <button
-                              onClick={() => toggleVerified(u)}
-                              disabled={actionLoading === u.id + "-verify"}
-                              title={
-                                u.isVerified ? "Mark unverified" : "Mark verified"
-                              }
-                              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
-                            >
-                              {u.isVerified ? "Unverify" : "Verify"}
-                            </button>
-
                             {/* View host detail */}
                             {u.role === "host" && (
                               <button
@@ -586,31 +569,54 @@ export default function AdminUsersPage() {
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    {hostDetailTarget.firstName[0]}{hostDetailTarget.lastName[0]}
+                  <div className="relative w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm flex-shrink-0 overflow-hidden">
+                    {hostDetailTarget.profileImage ? (
+                      <Image src={hostDetailTarget.profileImage} alt={hostDetailTarget.firstName} fill className="object-cover" />
+                    ) : (
+                      <>{hostDetailTarget.firstName[0]}{hostDetailTarget.lastName[0]}</>
+                    )}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">
-                      {hostDetailTarget.firstName} {hostDetailTarget.lastName}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900">
+                        {hostDetailTarget.firstName} {hostDetailTarget.lastName}
+                      </p>
+                      {hostDetailTarget.isVerified && (
+                        <FaCheckCircle className="text-emerald-500 text-xs" />
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400">{hostDetailTarget.email}</p>
+                    {hostDetailTarget.phone && (
+                      <p className="text-xs text-gray-400">{hostDetailTarget.phone}</p>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={() => setHostDetailTarget(null)}
-                  className="text-gray-400 hover:text-black transition"
-                >
-                  <FaTimes />
-                </button>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/hosts/${hostDetailTarget.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition"
+                    title="View public profile"
+                  >
+                    <FaExternalLinkAlt className="text-xs" />
+                  </a>
+                  <button
+                    onClick={() => setHostDetailTarget(null)}
+                    className="text-gray-400 hover:text-black transition"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
               </div>
 
-              {/* Host meta */}
-              <div className="px-6 py-4 border-b border-gray-100 grid grid-cols-3 gap-3 text-center text-xs">
+              {/* Host meta stats */}
+              <div className="px-6 py-4 border-b border-gray-100 grid grid-cols-4 gap-2 text-center text-xs">
                 <div className="bg-gray-50 rounded-xl py-3">
                   <p className="font-semibold text-gray-900 capitalize">
                     {hostDetailTarget.hostTier?.replace("_", " ") ?? "—"}
                   </p>
-                  <p className="text-gray-400 mt-0.5">Tier</p>
+                  <p className="text-gray-400 mt-0.5">Host tier</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl py-3">
                   <p className="font-semibold text-gray-900">
@@ -618,7 +624,7 @@ export default function AdminUsersPage() {
                       ? `${Math.round(Number(hostDetailTarget.responseRate) * 100)}%`
                       : "—"}
                   </p>
-                  <p className="text-gray-400 mt-0.5">Response rate</p>
+                  <p className="text-gray-400 mt-0.5">Response</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl py-3">
                   <p className={`font-semibold capitalize ${
@@ -632,10 +638,76 @@ export default function AdminUsersPage() {
                   </p>
                   <p className="text-gray-400 mt-0.5">KYC</p>
                 </div>
+                <div className="bg-gray-50 rounded-xl py-3">
+                  <div className="flex items-center justify-center gap-1">
+                    <FaCrown className={`text-xs ${
+                      hostDetailTarget.subscriptionTier === "elite" ? "text-amber-500"
+                      : hostDetailTarget.subscriptionTier === "pro" ? "text-blue-500"
+                      : "text-gray-400"
+                    }`} />
+                    <p className="font-semibold text-gray-900 capitalize">
+                      {hostDetailTarget.subscriptionTier ?? "starter"}
+                    </p>
+                  </div>
+                  <p className="text-gray-400 mt-0.5">Plan</p>
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto">
+              {/* Profile info */}
+              <div className="px-6 py-4 border-b border-gray-100 space-y-3">
+                <h3 className="font-semibold text-gray-900 text-sm">Profile</h3>
+                {hostDetailTarget.bio ? (
+                  <p className="text-sm text-gray-600 leading-relaxed">{hostDetailTarget.bio}</p>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No bio added</p>
+                )}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  {hostDetailTarget.occupation && (
+                    <div>
+                      <span className="text-gray-400">Occupation</span>
+                      <p className="text-gray-700 font-medium mt-0.5">{hostDetailTarget.occupation}</p>
+                    </div>
+                  )}
+                  {hostDetailTarget.city && (
+                    <div>
+                      <span className="text-gray-400">City</span>
+                      <p className="text-gray-700 font-medium mt-0.5">{hostDetailTarget.city}</p>
+                    </div>
+                  )}
+                  {hostDetailTarget.school && (
+                    <div>
+                      <span className="text-gray-400">School</span>
+                      <p className="text-gray-700 font-medium mt-0.5">{hostDetailTarget.school}</p>
+                    </div>
+                  )}
+                  {hostDetailTarget.languages && hostDetailTarget.languages.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="text-gray-400">Languages</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {hostDetailTarget.languages.map((lang) => (
+                          <span key={lang} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {hostDetailTarget.whyIHost && (
+                    <div className="col-span-2">
+                      <span className="text-gray-400">Why they host</span>
+                      <p className="text-gray-700 mt-0.5 leading-relaxed">{hostDetailTarget.whyIHost}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">
+                  Member since {new Date(hostDetailTarget.createdAt).toLocaleDateString("en-NG", { month: "long", year: "numeric" })}
+                </div>
               </div>
 
               {/* Properties */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
+              <div className="px-6 py-5">
                 <div className="flex items-center gap-2 mb-4">
                   <FaHome className="text-gray-400 text-sm" />
                   <h3 className="font-semibold text-gray-900 text-sm">
@@ -698,6 +770,7 @@ export default function AdminUsersPage() {
                   </div>
                 )}
               </div>
+              </div>{/* end scrollable body */}
             </motion.div>
           </>
         )}

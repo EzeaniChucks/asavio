@@ -1,24 +1,33 @@
 "use client";
 
 // app/dashboard/host/properties/new/page.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import PropertyForm, { PropertyFormData } from "@/components/forms/PropertyForm";
 import { api } from "@/lib/api";
+import { SubscriptionTier } from "@/types";
 import toast from "react-hot-toast";
+
+const PHOTO_LIMITS: Record<SubscriptionTier, number> = { starter: 10, pro: 15, elite: 20 };
 
 export default function NewPropertyPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("starter");
+
+  useEffect(() => {
+    api
+      .get("/subscriptions/me")
+      .then((res) => setSubscriptionTier(res.data.data.currentTier ?? "starter"))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (data: PropertyFormData) => {
     setIsLoading(true);
     try {
       const formData = new FormData();
-
-      // Append text fields
       formData.append("title", data.title);
       formData.append("description", data.description);
       formData.append("propertyType", data.propertyType);
@@ -26,14 +35,12 @@ export default function NewPropertyPage() {
       formData.append("bathrooms", String(data.bathrooms));
       formData.append("maxGuests", String(data.maxGuests));
       formData.append("pricePerNight", String(data.pricePerNight));
-      if (data.purposePricing) {
-        formData.append("purposePricing", JSON.stringify(data.purposePricing));
-      }
+      if (data.purposePricing) formData.append("purposePricing", JSON.stringify(data.purposePricing));
+      if (data.cautionFee && Number(data.cautionFee) > 0) formData.append("cautionFee", String(data.cautionFee));
+      if (data.nearbyPlaces?.length) formData.append("nearbyPlaces", JSON.stringify(data.nearbyPlaces));
       formData.append("amenities", JSON.stringify(data.amenities));
       if (data.checkInInstructions?.trim()) formData.append("checkInInstructions", data.checkInInstructions.trim());
       formData.append("location", JSON.stringify(data.location));
-
-      // Append images
       data.images.forEach((file) => formData.append("images", file));
 
       await api.post("/properties", formData, {
@@ -72,6 +79,7 @@ export default function NewPropertyPage() {
             onSubmit={handleSubmit}
             submitLabel="Create listing"
             isLoading={isLoading}
+            maxPhotos={PHOTO_LIMITS[subscriptionTier]}
           />
         </div>
       </div>

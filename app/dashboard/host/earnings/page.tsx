@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
+import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
 
 function formatDate(d: string | Date) {
   return new Date(d).toLocaleDateString("en-GB", {
@@ -179,6 +180,12 @@ export default function HostEarningsPage() {
             </div>
           ))}
         </motion.div>
+
+        {/* Analytics */}
+        <div className="mb-8">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Analytics</h2>
+          <AnalyticsCharts />
+        </div>
 
         {/* Commission info banner */}
         {paidBookings.length > 0 && (

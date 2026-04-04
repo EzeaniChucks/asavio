@@ -23,7 +23,11 @@ import {
   FaClock,
   FaExclamationTriangle,
   FaCalendarTimes,
+  FaCrown,
+  FaUser,
 } from "react-icons/fa";
+import SubscriptionBadge from "@/components/ui/SubscriptionBadge";
+import { SubscriptionTier } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
@@ -36,6 +40,7 @@ export default function HostDashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState<"not_submitted" | "pending" | "approved" | "rejected" | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("starter");
 
   // Auth guard
   useEffect(() => {
@@ -55,6 +60,11 @@ export default function HostDashboard() {
     api
       .get("/kyc/status")
       .then((res) => setKycStatus(res.data.data.kycStatus))
+      .catch(() => {});
+
+    api
+      .get("/subscriptions/me")
+      .then((res) => setSubscriptionTier(res.data.data.currentTier ?? "starter"))
       .catch(() => {});
   }, [user]);
 
@@ -136,6 +146,13 @@ export default function HostDashboard() {
                 : "Verify identity"}
             </Link>
             <Link
+              href="/dashboard/host/profile"
+              className="inline-flex items-center gap-2 btn-secondary"
+            >
+              <FaUser className="text-xs" />
+              Profile
+            </Link>
+            <Link
               href="/dashboard/host/availability"
               className="inline-flex items-center gap-2 btn-secondary"
             >
@@ -210,6 +227,84 @@ export default function HostDashboard() {
             </Link>
           </div>
         )}
+
+        {/* Subscription status */}
+        <div className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 mb-6 ${
+          subscriptionTier === "elite"
+            ? "bg-amber-50 border-amber-200"
+            : subscriptionTier === "pro"
+            ? "bg-blue-50 border-blue-200"
+            : "bg-gray-50 border-gray-200"
+        }`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            {subscriptionTier === "elite" ? (
+              <FaCrown className="text-amber-500 flex-shrink-0" />
+            ) : subscriptionTier === "pro" ? (
+              <FaCrown className="text-blue-500 flex-shrink-0" />
+            ) : (
+              <FaCrown className="text-gray-400 flex-shrink-0" />
+            )}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-gray-800">
+                  {subscriptionTier === "starter" ? "Starter plan" : subscriptionTier === "pro" ? "Pro plan" : "Elite plan"}
+                </span>
+                <SubscriptionBadge tier={subscriptionTier} />
+              </div>
+              {subscriptionTier === "starter" && (
+                <p className="text-xs text-gray-500 mt-0.5">Upgrade to unlock more listings, lower commission, and feature videos.</p>
+              )}
+            </div>
+          </div>
+          <Link
+            href="/dashboard/host/subscription"
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors ${
+              subscriptionTier === "elite"
+                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                : subscriptionTier === "pro"
+                ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                : "bg-black text-white hover:bg-gray-800"
+            }`}
+          >
+            {subscriptionTier === "starter" ? "Upgrade plan" : "Manage subscription"}
+          </Link>
+        </div>
+
+        {/* Profile completeness prompt */}
+        {(() => {
+          const score =
+            (user?.profileImage ? 20 : 0) +
+            (user?.bio ? 20 : 0) +
+            (user?.languages?.length ? 15 : 0) +
+            (user?.whyIHost ? 15 : 0) +
+            (user?.occupation ? 10 : 0) +
+            (user?.city ? 10 : 0) +
+            (user?.school ? 10 : 0);
+          if (score >= 100) return null;
+          return (
+            <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3.5 mb-6">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-sm font-semibold text-gray-800">Complete your host profile</p>
+                  <span className="text-xs text-gray-500">{score}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div
+                    className="bg-black h-1.5 rounded-full transition-all"
+                    style={{ width: `${score}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1.5">A complete profile builds trust and helps guests choose you.</p>
+              </div>
+              <Link
+                href="/dashboard/host/profile"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors flex-shrink-0"
+              >
+                Complete profile
+              </Link>
+            </div>
+          );
+        })()}
 
         {/* Co-host notice */}
         <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6 text-sm text-amber-800">

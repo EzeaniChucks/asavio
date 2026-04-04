@@ -1,15 +1,22 @@
 "use client";
 
 // app/dashboard/host/properties/[id]/edit/page.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaUpload, FaTimes, FaVideo, FaTrash } from "react-icons/fa";
 import PropertyForm, { PropertyFormData } from "@/components/forms/PropertyForm";
+import TierGate from "@/components/ui/TierGate";
 import { api } from "@/lib/api";
-import { Property } from "@/types";
+import { Property, SubscriptionTier } from "@/types";
 import toast from "react-hot-toast";
+
+const PHOTO_LIMITS: Record<SubscriptionTier, number> = {
+  starter: 10,
+  pro: 15,
+  elite: 20,
+};
 
 export default function EditPropertyPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,11 +24,17 @@ export default function EditPropertyPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("starter");
 
   // Image management state
   const [markedForRemoval, setMarkedForRemoval] = useState<string[]>([]); // publicIds
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
+
+  // Video state
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoDeleting, setVideoDeleting] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api
@@ -29,6 +42,11 @@ export default function EditPropertyPage() {
       .then((res) => setProperty(res.data.data.property))
       .catch(() => router.push("/dashboard/host"))
       .finally(() => setIsFetching(false));
+
+    api
+      .get("/subscriptions/me")
+      .then((res) => setSubscriptionTier(res.data.data.currentTier ?? "starter"))
+      .catch(() => {});
   }, [id, router]);
 
   const toggleRemoval = (publicId: string) => {
@@ -37,11 +55,13 @@ export default function EditPropertyPage() {
     );
   };
 
+  const photoMax = PHOTO_LIMITS[subscriptionTier];
+
   const handleNewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     const currentCount = (property?.images?.length ?? 0) - markedForRemoval.length + newFiles.length;
-    if (currentCount + files.length > 10) {
-      toast.error("Maximum 10 images total");
+    if (currentCount + files.length > photoMax) {
+      toast.error(`Maximum ${photoMax} images on your ${subscriptionTier} plan`);
       return;
     }
     setNewFiles((prev) => [...prev, ...files]);
@@ -53,6 +73,40 @@ export default function EditPropertyPage() {
   const removeNewFile = (i: number) => {
     setNewFiles((prev) => prev.filter((_, idx) => idx !== i));
     setNewPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setVideoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("video", file);
+      const res = await api.post(`/properties/${id}/feature-video`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setProperty((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.featureVideoUrl } : prev);
+      toast.success("Feature video uploaded");
+    } catch {
+      // interceptor handles error toast
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
+  const handleVideoDelete = async () => {
+    if (!confirm("Remove the feature video?")) return;
+    setVideoDeleting(true);
+    try {
+      await api.delete(`/properties/${id}/feature-video`);
+      setProperty((prev) => prev ? { ...prev, featureVideoUrl: null } : prev);
+      toast.success("Feature video removed");
+    } catch {
+      // interceptor handles error toast
+    } finally {
+      setVideoDeleting(false);
+    }
   };
 
   const handleSubmit = async (data: PropertyFormData) => {
@@ -67,6 +121,9 @@ export default function EditPropertyPage() {
       fd.append("maxGuests", String(data.maxGuests));
       fd.append("pricePerNight", String(data.pricePerNight));
       if (data.purposePricing) fd.append("purposePricing", JSON.stringify(data.purposePricing));
+      if (data.cautionFee && Number(data.cautionFee) > 0) fd.append("cautionFee", String(data.cautionFee));
+      else fd.append("cautionFee", "");
+      fd.append("nearbyPlaces", JSON.stringify(data.nearbyPlaces ?? []));
       fd.append("amenities", JSON.stringify(data.amenities));
       fd.append("checkInInstructions", data.checkInInstructions?.trim() ?? "");
       fd.append("location", JSON.stringify(data.location));
@@ -123,12 +180,15 @@ export default function EditPropertyPage() {
               maxGuests: property.maxGuests,
               pricePerNight: property.pricePerNight,
               purposePricing: (property as any).purposePricing ?? null,
+              cautionFee: property.cautionFee != null ? String(property.cautionFee) : "",
+              nearbyPlaces: property.nearbyPlaces ?? [],
               amenities: property.amenities,
               location: property.location,
             }}
             onSubmit={handleSubmit}
             submitLabel="Save changes"
             isLoading={isLoading}
+            maxPhotos={photoMax}
           />
         </div>
 
@@ -136,7 +196,7 @@ export default function EditPropertyPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Photos</h2>
-            <span className="text-xs text-gray-400">{remainingCount} / 10</span>
+            <span className="text-xs text-gray-400">{remainingCount} / {photoMax}</span>
           </div>
 
           {/* Existing images */}
@@ -196,7 +256,7 @@ export default function EditPropertyPage() {
             </div>
           )}
 
-          {remainingCount < 10 && (
+          {remainingCount < photoMax && (
             <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-5 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
               <FaUpload className="text-gray-400" />
               Add photos
@@ -209,6 +269,52 @@ export default function EditPropertyPage() {
               {markedForRemoval.length} photo{markedForRemoval.length > 1 ? "s" : ""} will be removed when you save changes above.
             </p>
           )}
+        </div>
+
+        {/* Feature video */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+          <h2 className="font-semibold text-gray-900 mb-1">Feature video</h2>
+          <p className="text-xs text-gray-400 mb-4">A short highlight reel shown on your listing page. Pro: up to 60s / 50MB · Elite: up to 90s / 100MB.</p>
+          <TierGate
+            currentTier={subscriptionTier}
+            requiredTier="pro"
+            lockedMessage="Feature video is available on the Pro plan and above."
+          >
+            {property.featureVideoUrl ? (
+              <div className="space-y-3">
+                <video
+                  src={property.featureVideoUrl}
+                  controls
+                  className="w-full max-h-64 rounded-xl bg-black object-contain"
+                  preload="metadata"
+                />
+                <button
+                  type="button"
+                  onClick={handleVideoDelete}
+                  disabled={videoDeleting}
+                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  <FaTrash className="text-xs" />
+                  {videoDeleting ? "Removing…" : "Remove video"}
+                </button>
+              </div>
+            ) : (
+              <>
+                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
+                  <FaVideo className="text-gray-400" />
+                  {videoUploading ? "Uploading…" : "Upload feature video (MP4 / MOV)"}
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/x-m4v"
+                    className="hidden"
+                    disabled={videoUploading}
+                    onChange={handleVideoUpload}
+                  />
+                </label>
+              </>
+            )}
+          </TierGate>
         </div>
       </div>
     </div>

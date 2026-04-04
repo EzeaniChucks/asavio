@@ -33,6 +33,7 @@ export default function NewVehiclePage() {
     driverAvailable: false,
     location: "",
     checkInInstructions: "",
+    cautionFee: "",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
@@ -92,6 +93,7 @@ export default function NewVehiclePage() {
         fd.append("priceWithDriverPerDay", form.priceWithDriverPerDay);
       }
       if (form.checkInInstructions.trim()) fd.append("checkInInstructions", form.checkInInstructions.trim());
+      if (form.cautionFee && Number(form.cautionFee) > 0) fd.append("cautionFee", form.cautionFee);
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       images.forEach((img) => fd.append("images", img));
 
@@ -313,6 +315,20 @@ export default function NewVehiclePage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Caution fee */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-1">Caution fee (optional)</h2>
+            <p className="text-xs text-gray-400 mb-3">Refundable deposit collected by you on pickup. Displayed to guests before booking — not processed by Asavio.</p>
+            <input
+              type="number"
+              value={form.cautionFee}
+              min={0}
+              placeholder="e.g. 50000"
+              onChange={(e) => set("cautionFee", e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
           </div>
 
           {/* Check-in / pickup instructions */}

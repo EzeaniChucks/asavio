@@ -1,55 +1,37 @@
 "use client";
 
 // components/home/Categories.tsx
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { api } from "@/lib/api";
 
-const categories = [
-  {
-    label: "Apartments",
-    type: "apartment",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80",
-  },
-  {
-    label: "Villas",
-    type: "villa",
-    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80",
-  },
-  {
-    label: "Beach Houses",
-    type: "beach house",
-    image: "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=400&q=80",
-  },
-  {
-    label: "Penthouses",
-    type: "penthouse",
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&q=80",
-  },
-  {
-    label: "Studios",
-    type: "studio",
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80",
-  },
-  {
-    label: "Cabins",
-    type: "cabin",
-    image: "https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=400&q=80",
-  },
-  {
-    label: "Entire Homes",
-    type: "entire home",
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=80",
-  },
-  {
-    label: "Townhouses",
-    type: "townhouse",
-    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=80",
-  },
-];
+interface TypeRepresentative {
+  type: string;
+  propertyId: string;
+  image: string;
+}
+
+function toLabel(type: string) {
+  return type
+    .split(/[_\s]/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 export default function Categories() {
   const router = useRouter();
+  const [categories, setCategories] = useState<TypeRepresentative[]>([]);
+
+  useEffect(() => {
+    api
+      .get("/properties/type-representatives")
+      .then((res) => setCategories(res.data.data.representatives ?? []))
+      .catch(() => {});
+  }, []);
+
+  if (!categories.length) return null;
 
   return (
     <section className="py-16 bg-gray-50">
@@ -75,13 +57,17 @@ export default function Categories() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              onClick={() => router.push(`/properties?propertyType=${encodeURIComponent(cat.type)}`)}
+              onClick={() =>
+                router.push(
+                  `/properties?propertyType=${encodeURIComponent(cat.type)}`
+                )
+              }
               className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer"
             >
               {/* Photo */}
               <Image
                 src={cat.image}
-                alt={cat.label}
+                alt={toLabel(cat.type)}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-500"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12.5vw"
@@ -92,7 +78,7 @@ export default function Categories() {
 
               {/* Label */}
               <span className="absolute bottom-0 left-0 right-0 px-3 py-3 text-white text-xs font-semibold text-center leading-tight">
-                {cat.label}
+                {toLabel(cat.type)}
               </span>
             </motion.button>
           ))}

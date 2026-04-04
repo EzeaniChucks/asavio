@@ -241,10 +241,34 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
+        {/* Feature video */}
+        {property.featureVideoUrl && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Feature video</h2>
+            <video
+              src={property.featureVideoUrl}
+              controls
+              className="w-full max-h-[480px] rounded-2xl bg-black object-contain"
+              preload="metadata"
+            />
+          </div>
+        )}
+
         {/* Main layout: info + booking sidebar */}
         <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
           {/* Left — property info */}
           <div>
+            {/* Caution fee */}
+            {property.cautionFee != null && Number(property.cautionFee) > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+                <span>🔒</span>
+                <p>
+                  <strong>Caution fee: ₦{Number(property.cautionFee).toLocaleString("en-NG")}</strong>
+                  <span className="text-blue-600 ml-1">— refundable deposit collected by the host on arrival</span>
+                </p>
+              </div>
+            )}
+
             {/* Quick stats */}
             <div className="flex flex-wrap gap-6 pb-8 border-b border-gray-100 mb-8">
               <div className="flex items-center gap-2 text-gray-700">
@@ -268,14 +292,20 @@ export default function PropertyDetailPage() {
               className="flex items-center justify-between gap-4 pb-8 border-b border-gray-100 mb-8"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
-                  {property.host?.firstName?.[0]?.toUpperCase() ?? "H"}
-                </div>
+                <Link href={`/hosts/${property.hostId}`} className="flex-shrink-0">
+                  <div className="relative w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl overflow-hidden hover:opacity-90 transition-opacity">
+                    {property.host?.profileImage ? (
+                      <Image src={property.host.profileImage} alt={property.host.firstName} fill className="object-cover" />
+                    ) : (
+                      property.host?.firstName?.[0]?.toUpperCase() ?? "H"
+                    )}
+                  </div>
+                </Link>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900">
+                    <Link href={`/hosts/${property.hostId}`} className="font-semibold text-gray-900 hover:underline">
                       Hosted by {property.host?.firstName} {property.host?.lastName}
-                    </p>
+                    </Link>
                     {property.host?.hostTier && (
                       <HostTierBadge tier={property.host.hostTier} size="sm" />
                     )}
@@ -338,6 +368,24 @@ export default function PropertyDetailPage() {
                       <span className="text-xl">{getAmenityIcon(amenity)}</span>
                       <span className="capitalize">{amenity}</span>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Nearby places */}
+            {property.nearbyPlaces && property.nearbyPlaces.length > 0 && (
+              <div className="pb-8 border-b border-gray-100 mb-8">
+                <h2 className="text-xl font-semibold mb-4">Nearby places</h2>
+                <div className="flex flex-wrap gap-2">
+                  {property.nearbyPlaces.map((place) => (
+                    <span
+                      key={place}
+                      className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full"
+                    >
+                      <span>📍</span>
+                      {place}
+                    </span>
                   ))}
                 </div>
               </div>

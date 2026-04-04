@@ -1,15 +1,22 @@
 "use client";
 
 // app/dashboard/host/vehicles/[id]/edit/page.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaUpload, FaTimes, FaVideo, FaTrash } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import TierGate from "@/components/ui/TierGate";
 import { api } from "@/lib/api";
-import { Vehicle } from "@/types";
+import { Vehicle, SubscriptionTier } from "@/types";
 import toast from "react-hot-toast";
+
+const PHOTO_LIMITS: Record<SubscriptionTier, number> = {
+  starter: 10,
+  pro: 15,
+  elite: 20,
+};
 
 const VEHICLE_TYPES = ["sedan", "suv", "sports", "luxury", "van", "pickup", "convertible", "electric"];
 
@@ -27,6 +34,10 @@ export default function EditVehiclePage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("starter");
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoDeleting, setVideoDeleting] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     make: "",
@@ -40,6 +51,7 @@ export default function EditVehiclePage() {
     driverAvailable: false,
     location: "",
     checkInInstructions: "",
+    cautionFee: "",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
@@ -66,11 +78,17 @@ export default function EditVehiclePage() {
           driverAvailable: v.withDriver ?? false,
           location: v.location ?? "",
           checkInInstructions: (v as any).checkInInstructions ?? "",
+          cautionFee: v.cautionFee != null ? String(v.cautionFee) : "",
         });
         setSelectedFeatures(v.features ?? []);
       })
       .catch(() => router.push("/dashboard/host"))
       .finally(() => setIsFetching(false));
+
+    api
+      .get("/subscriptions/me")
+      .then((res) => setSubscriptionTier(res.data.data.currentTier ?? "starter"))
+      .catch(() => {});
   }, [id, router]);
 
   if (!isAuthenticated || (user?.role !== "host" && user?.role !== "admin")) return null;
@@ -88,11 +106,13 @@ export default function EditVehiclePage() {
     );
   };
 
+  const photoMax = PHOTO_LIMITS[subscriptionTier];
+
   const handleNewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     const existingCount = (vehicle?.images?.length ?? 0) - markedForRemoval.length + newFiles.length;
-    if (existingCount + files.length > 8) {
-      toast.error("Maximum 8 images");
+    if (existingCount + files.length > photoMax) {
+      toast.error(`Maximum ${photoMax} images on your ${subscriptionTier} plan`);
       return;
     }
     setNewFiles((prev) => [...prev, ...files]);
@@ -103,6 +123,40 @@ export default function EditVehiclePage() {
   const removeNewFile = (i: number) => {
     setNewFiles((prev) => prev.filter((_, idx) => idx !== i));
     setNewPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setVideoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("video", file);
+      const res = await api.post(`/vehicles/${id}/feature-video`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setVehicle((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.featureVideoUrl } : prev);
+      toast.success("Feature video uploaded");
+    } catch {
+      // interceptor handles error toast
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
+  const handleVideoDelete = async () => {
+    if (!confirm("Remove the feature video?")) return;
+    setVideoDeleting(true);
+    try {
+      await api.delete(`/vehicles/${id}/feature-video`);
+      setVehicle((prev) => prev ? { ...prev, featureVideoUrl: null } : prev);
+      toast.success("Feature video removed");
+    } catch {
+      // interceptor handles error toast
+    } finally {
+      setVideoDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +182,8 @@ export default function EditVehiclePage() {
         fd.append("priceWithDriverPerDay", form.priceWithDriverPerDay);
       }
       fd.append("checkInInstructions", form.checkInInstructions.trim());
+      if (form.cautionFee && Number(form.cautionFee) > 0) fd.append("cautionFee", form.cautionFee);
+      else fd.append("cautionFee", "");
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       markedForRemoval.forEach((pid) => fd.append("removeImagePublicIds", pid));
       newFiles.forEach((file) => fd.append("images", file));
@@ -322,7 +378,7 @@ export default function EditVehiclePage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-gray-900">Photos</h2>
-              <span className="text-xs text-gray-400">{remainingCount} / 8</span>
+              <span className="text-xs text-gray-400">{remainingCount} / {photoMax}</span>
             </div>
 
             {existingImages.length > 0 && (
@@ -380,7 +436,7 @@ export default function EditVehiclePage() {
               </div>
             )}
 
-            {remainingCount < 8 && (
+            {remainingCount < photoMax && (
               <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-5 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
                 <FaUpload className="text-gray-400" />
                 Add photos
@@ -393,6 +449,20 @@ export default function EditVehiclePage() {
                 {markedForRemoval.length} photo{markedForRemoval.length > 1 ? "s" : ""} will be removed on save.
               </p>
             )}
+          </div>
+
+          {/* Caution fee */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-1">Caution fee (optional)</h2>
+            <p className="text-xs text-gray-400 mb-3">Refundable deposit collected by you on pickup. Displayed to guests before booking — not processed by Asavio.</p>
+            <input
+              type="number"
+              value={form.cautionFee}
+              min={0}
+              placeholder="e.g. 50000"
+              onChange={(e) => set("cautionFee", e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
           </div>
 
           {/* Pickup instructions */}
@@ -416,6 +486,50 @@ export default function EditVehiclePage() {
             {isSubmitting ? "Saving…" : "Save changes"}
           </button>
         </form>
+
+        {/* Feature video */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mt-5">
+          <h2 className="font-semibold text-gray-900 mb-1">Feature video</h2>
+          <p className="text-xs text-gray-400 mb-4">A short highlight reel shown on your vehicle listing. Pro: up to 60s / 50MB · Elite: up to 90s / 100MB.</p>
+          <TierGate
+            currentTier={subscriptionTier}
+            requiredTier="pro"
+            lockedMessage="Feature video is available on the Pro plan and above."
+          >
+            {vehicle.featureVideoUrl ? (
+              <div className="space-y-3">
+                <video
+                  src={vehicle.featureVideoUrl}
+                  controls
+                  className="w-full max-h-64 rounded-xl bg-black object-contain"
+                  preload="metadata"
+                />
+                <button
+                  type="button"
+                  onClick={handleVideoDelete}
+                  disabled={videoDeleting}
+                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  <FaTrash className="text-xs" />
+                  {videoDeleting ? "Removing…" : "Remove video"}
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
+                <FaVideo className="text-gray-400" />
+                {videoUploading ? "Uploading…" : "Upload feature video (MP4 / MOV)"}
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/x-m4v"
+                  className="hidden"
+                  disabled={videoUploading}
+                  onChange={handleVideoUpload}
+                />
+              </label>
+            )}
+          </TierGate>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,41 @@ export interface Image {
   isPrimary: boolean;
 }
 
+export type SubscriptionTier = "starter" | "pro" | "elite";
+export type SubscriptionStatus = "active" | "cancelled" | "expired" | "past_due";
+export type BillingCycle = "monthly" | "annual";
+
+export interface Subscription {
+  id: string;
+  hostId: string;
+  tier: SubscriptionTier;
+  billingCycle: BillingCycle;
+  status: SubscriptionStatus;
+  paystackSubscriptionCode: string | null;
+  paystackEmailToken: string | null;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TierConfig {
+  label: string;
+  maxProperties: number;
+  maxVehicles: number;
+  maxPhotos: number;
+  featureVideo: boolean;
+  videoMaxSeconds: number;
+  videoMaxSizeMB: number;
+  commissionRate: number;
+  searchBoost: number;
+  homepageFeatured: boolean;
+  priceMonthly: number;
+  priceAnnual: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -33,8 +68,17 @@ export interface User {
   kycReviewedAt?: string | null;
   kycRejectionReason?: string | null;
   hostTier?: "new_host" | "trusted_host" | "top_host";
+  /** Paid subscription tier — defaults to 'starter' (free) */
+  subscriptionTier?: SubscriptionTier;
   responseRate?: number;
   lastSeen?: string | null;
+  // Host public profile fields
+  bio?: string | null;
+  languages?: string[] | null;
+  occupation?: string | null;
+  city?: string | null;
+  whyIHost?: string | null;
+  school?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -119,6 +163,11 @@ export interface Property {
   averageRating: number;
   totalReviews: number;
   reviews?: Review[];
+  featureVideoUrl?: string | null;
+  featureVideoPublicId?: string | null;
+  viewCount?: number;
+  cautionFee?: number | null;
+  nearbyPlaces?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -182,8 +231,26 @@ export interface Vehicle {
   totalReviews: number;
   host: User;
   hostId: string;
+  featureVideoUrl?: string | null;
+  featureVideoPublicId?: string | null;
+  cautionFee?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HostAnalytics {
+  totalRevenue: number;
+  totalViews: number;
+  totalBookings: number;
+  conversionRate: number;
+  revenueByDay: Array<{ date: string; revenue: number }>;
+  topListings: Array<{
+    propertyId: string;
+    title: string;
+    revenue: number;
+    views: number;
+    bookings: number;
+  }>;
 }
 
 // API response shapes

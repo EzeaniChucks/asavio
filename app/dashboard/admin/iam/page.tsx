@@ -36,7 +36,6 @@ const emptyForm = {
   email: "",
   firstName: "",
   lastName: "",
-  password: "",
   adminPermissions: [] as string[],
 };
 
@@ -56,6 +55,8 @@ export default function IAMPage() {
   const [saving, setSaving] = useState(false);
 
   const isSuperAdmin = user?.isSuperAdmin || user?.adminPermissions === null;
+  const canManageAdmins =
+    isSuperAdmin || (user?.adminPermissions ?? []).includes("manage_admins");
 
   useEffect(() => {
     api
@@ -71,7 +72,7 @@ export default function IAMPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
+    if (!createForm.email || !createForm.firstName || !createForm.lastName) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -135,7 +136,7 @@ export default function IAMPage() {
             <h1 className="text-2xl font-bold text-gray-900">Identity &amp; Access Management</h1>
             <p className="text-sm text-gray-500 mt-1">Manage admin accounts and their permissions</p>
           </div>
-          {isSuperAdmin && (
+          {canManageAdmins && (
             <button
               onClick={() => setShowCreate(true)}
               className="inline-flex items-center gap-2 btn-primary"
@@ -197,7 +198,7 @@ export default function IAMPage() {
                       </div>
                     )}
                   </div>
-                  {isSuperAdmin && !admin.isSuperAdmin && admin.id !== user?.id && (
+                  {canManageAdmins && !admin.isSuperAdmin && admin.id !== user?.id && (
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => openEdit(admin)}
@@ -263,16 +264,9 @@ export default function IAMPage() {
                   placeholder="admin@asavio.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Temporary password *</label>
-                <input
-                  type="password"
-                  value={createForm.password}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="Min. 8 characters"
-                />
-              </div>
+              <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2.5">
+                An invite email will be sent with a link for the new admin to set their own password.
+              </p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">

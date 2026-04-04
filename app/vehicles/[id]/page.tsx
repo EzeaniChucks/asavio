@@ -26,6 +26,8 @@ import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import GalleryLightbox from "@/components/ui/GalleryLightbox";
 import VehicleBookingWidget from "@/components/booking/VehicleBookingWidget";
+import HostTierBadge from "@/components/ui/HostTierBadge";
+import { FaComments } from "react-icons/fa";
 
 const FEATURE_ICONS: Record<string, string> = {
   gps: "🗺️",
@@ -244,10 +246,34 @@ export default function VehicleDetailPage() {
           </div>
         )}
 
+        {/* Feature video */}
+        {vehicle.featureVideoUrl && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Feature video</h2>
+            <video
+              src={vehicle.featureVideoUrl}
+              controls
+              className="w-full max-h-[480px] rounded-2xl bg-black object-contain"
+              preload="metadata"
+            />
+          </div>
+        )}
+
         {/* Main layout */}
         <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
           {/* Left */}
           <div>
+            {/* Caution fee */}
+            {vehicle.cautionFee != null && Number(vehicle.cautionFee) > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+                <span>🔒</span>
+                <p>
+                  <strong>Caution fee: ₦{Number(vehicle.cautionFee).toLocaleString("en-NG")}</strong>
+                  <span className="text-blue-600 ml-1">— refundable deposit collected by the host on pickup</span>
+                </p>
+              </div>
+            )}
+
             {/* Quick stats */}
             <div className="flex flex-wrap gap-6 pb-8 border-b border-gray-100 mb-8">
               <div className="flex items-center gap-2 text-gray-700">
@@ -268,22 +294,65 @@ export default function VehicleDetailPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-4 pb-8 border-b border-gray-100 mb-8"
+              className="flex items-center justify-between gap-4 pb-8 border-b border-gray-100 mb-8"
             >
-              <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
-                {vehicle.host?.firstName?.[0]?.toUpperCase() ?? "H"}
+              <div className="flex items-center gap-4">
+                <Link href={`/hosts/${vehicle.hostId}`} className="flex-shrink-0">
+                  <div className="relative w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-black font-bold text-xl overflow-hidden hover:opacity-90 transition-opacity">
+                    {vehicle.host?.profileImage ? (
+                      <Image src={vehicle.host.profileImage} alt={vehicle.host.firstName} fill className="object-cover" />
+                    ) : (
+                      vehicle.host?.firstName?.[0]?.toUpperCase() ?? "H"
+                    )}
+                  </div>
+                </Link>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link href={`/hosts/${vehicle.hostId}`} className="font-semibold text-gray-900 hover:underline">
+                      Listed by {vehicle.host?.firstName} {vehicle.host?.lastName}
+                    </Link>
+                    {vehicle.host?.hostTier && (
+                      <HostTierBadge tier={vehicle.host.hostTier} size="sm" />
+                    )}
+                  </div>
+                  {vehicle.host?.isVerified && (
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                      <FaCheckCircle className="text-green-500 text-xs" />
+                      Verified host
+                    </p>
+                  )}
+                  {vehicle.host?.responseRate != null && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {Math.round(Number(vehicle.host.responseRate) * 100)}% response rate
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Listed by {vehicle.host?.firstName} {vehicle.host?.lastName}
-                </p>
-                {vehicle.host?.isVerified && (
-                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
-                    <FaCheckCircle className="text-green-500 text-xs" />
-                    Verified host
-                  </p>
-                )}
-              </div>
+              {(!user || user.id !== vehicle.hostId) && (
+                <button
+                  onClick={async () => {
+                    if (!isAuthenticated) {
+                      const returnUrl = `/dashboard/messages?hostId=${vehicle.hostId}&vehicleId=${vehicle.id}`;
+                      router.push(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+                      return;
+                    }
+                    try {
+                      const res = await api.post("/conversations", {
+                        hostId: vehicle.hostId,
+                        vehicleId: vehicle.id,
+                      });
+                      const convId = res.data.data.conversation.id;
+                      router.push(`/dashboard/messages?conv=${convId}`);
+                    } catch {
+                      // Error toast shown by api interceptor
+                    }
+                  }}
+                  className="flex items-center gap-2 text-sm font-medium border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+                >
+                  <FaComments className="text-gray-500" />
+                  Message host
+                </button>
+              )}
             </motion.div>
 
             {/* Description */}

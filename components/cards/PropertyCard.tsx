@@ -46,6 +46,13 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
             {property.propertyType}
           </span>
 
+          {/* Featured badge (Elite hosts) */}
+          {property.host?.subscriptionTier === "elite" && (
+            <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+              ★ Featured
+            </span>
+          )}
+
           {/* Rating overlay */}
           {property.totalReviews > 0 && (
             <span className="absolute top-3 right-3 flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-full">

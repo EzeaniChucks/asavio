@@ -58,6 +58,8 @@ export interface PropertyFormData {
   maxGuests: number;
   pricePerNight: number;
   purposePricing: Record<string, number> | null;
+  cautionFee: string;
+  nearbyPlaces: string[];
   amenities: string[];
   checkInInstructions: string;
   location: {
@@ -75,6 +77,7 @@ interface PropertyFormProps {
   onSubmit: (data: PropertyFormData) => Promise<void>;
   submitLabel?: string;
   isLoading?: boolean;
+  maxPhotos?: number;
 }
 
 export default function PropertyForm({
@@ -82,6 +85,7 @@ export default function PropertyForm({
   onSubmit,
   submitLabel = "Save property",
   isLoading = false,
+  maxPhotos = 10,
 }: PropertyFormProps) {
   const [form, setForm] = useState<PropertyFormData>({
     title: initialData?.title ?? "",
@@ -92,6 +96,8 @@ export default function PropertyForm({
     maxGuests: initialData?.maxGuests ?? 2,
     pricePerNight: initialData?.pricePerNight ?? 0,
     purposePricing: (initialData as any)?.purposePricing ?? null,
+    cautionFee: (initialData as any)?.cautionFee != null ? String((initialData as any).cautionFee) : "",
+    nearbyPlaces: (initialData as any)?.nearbyPlaces ?? [],
     amenities: initialData?.amenities ?? [],
     checkInInstructions: (initialData as any)?.checkInInstructions ?? "",
     location: {
@@ -109,6 +115,7 @@ export default function PropertyForm({
   );
   const [newPurpose, setNewPurpose] = useState(PURPOSE_OPTIONS[0]);
   const [newPurposePrice, setNewPurposePrice] = useState("");
+  const [newPlace, setNewPlace] = useState("");
 
   const set = (field: keyof PropertyFormData, value: unknown) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -218,6 +225,21 @@ export default function PropertyForm({
               />
             </div>
           ))}
+        </div>
+
+        <div className="mt-4">
+          <label className={labelClass}>Caution fee (₦) — optional</label>
+          <input
+            type="number"
+            value={form.cautionFee}
+            min={0}
+            placeholder="e.g. 50000"
+            onChange={(e) => set("cautionFee", e.target.value)}
+            className={fieldClass}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Refundable deposit collected by you on arrival. Displayed to guests before booking — not processed by Asavio.
+          </p>
         </div>
       </section>
 
@@ -383,6 +405,63 @@ export default function PropertyForm({
         )}
       </section>
 
+      {/* ── Nearby places ─────────────────────────────── */}
+      <section>
+        <h2 className="text-lg font-semibold mb-1 pb-2 border-b border-gray-100">
+          Nearby places <span className="text-sm font-normal text-gray-400">(optional)</span>
+        </h2>
+        <p className="text-sm text-gray-400 mb-4">Help guests understand what&apos;s around. E.g. &ldquo;Lekki Phase 1 — 5 min&rdquo;</p>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newPlace}
+            onChange={(e) => setNewPlace(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const trimmed = newPlace.trim();
+                if (trimmed && !form.nearbyPlaces.includes(trimmed)) {
+                  set("nearbyPlaces", [...form.nearbyPlaces, trimmed]);
+                  setNewPlace("");
+                }
+              }
+            }}
+            placeholder="e.g. Victoria Island — 10 min drive"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const trimmed = newPlace.trim();
+              if (trimmed && !form.nearbyPlaces.includes(trimmed)) {
+                set("nearbyPlaces", [...form.nearbyPlaces, trimmed]);
+                setNewPlace("");
+              }
+            }}
+            disabled={!newPlace.trim()}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white text-sm font-medium rounded-xl hover:bg-gray-800 disabled:opacity-40 transition"
+          >
+            <FaPlus className="text-xs" /> Add
+          </button>
+        </div>
+        {form.nearbyPlaces.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {form.nearbyPlaces.map((place) => (
+              <span key={place} className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                {place}
+                <button
+                  type="button"
+                  onClick={() => set("nearbyPlaces", form.nearbyPlaces.filter((p) => p !== place))}
+                  className="hover:text-red-500 transition-colors"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* ── Amenities ──────────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold mb-5 pb-2 border-b border-gray-100">
@@ -415,12 +494,26 @@ export default function PropertyForm({
           Photos
         </h2>
         <p className="text-sm text-gray-400 mb-5">
-          Add at least one photo. The first image will be the cover.
+          Add at least one photo. The first image will be the cover. Your plan allows up to <strong>{maxPhotos} photos</strong>.
         </p>
         <ImageUpload
-          maxFiles={10}
+          maxFiles={maxPhotos}
           onFilesChange={(files) => set("images", files)}
         />
+        {maxPhotos < 20 && (
+          <p className="text-xs text-gray-400 mt-3">
+            Want to add more photos?{" "}
+            <a
+              href="/dashboard/host/subscription"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-black underline hover:text-gray-600 transition-colors"
+            >
+              Upgrade your plan ↗
+            </a>{" "}
+            to upload up to {maxPhotos === 10 ? "15 (Pro) or 20 (Elite)" : "20 (Elite)"} photos.
+          </p>
+        )}
       </section>
 
       {/* ── Check-in instructions ───────────────────────── */}
