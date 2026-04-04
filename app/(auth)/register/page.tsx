@@ -10,6 +10,7 @@ import {
   FaEnvelope,
   FaLock,
   FaUser,
+  FaPhone,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "next/navigation";
@@ -26,6 +27,7 @@ function RegisterContent() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     password: "",
     role: "user" as Role,
   });
@@ -40,8 +42,8 @@ function RegisterContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { firstName, lastName, email, password } = formData;
-    if (!firstName || !lastName || !email || !password) {
+    const { firstName, lastName, email, phone, password } = formData;
+    if (!firstName || !lastName || !email || !phone || !password) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -158,6 +160,26 @@ function RegisterContent() {
                   placeholder="you@example.com"
                   autoComplete="email"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Phone number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FaPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+234 800 000 0000"
+                  autoComplete="tel"
+                  required
+                  className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
                 />
               </div>
             </div>

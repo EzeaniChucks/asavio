@@ -23,6 +23,7 @@ import {
   FaCrown,
   FaPhone,
   FaEnvelope,
+  FaUser,
 } from "react-icons/fa";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,6 +67,12 @@ export default function AdminUsersPage() {
   const [hostProperties, setHostProperties] = useState<any[]>([]);
   const [hostDetailLoading, setHostDetailLoading] = useState(false);
 
+  // Direct email modal
+  const [emailTarget, setEmailTarget] = useState<User | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+
   const LIMIT = 20;
 
   useEffect(() => {
@@ -100,6 +107,26 @@ export default function AdminUsersPage() {
   useEffect(() => {
     setPage(1);
   }, [search, roleFilter]);
+
+  async function handleSendEmail() {
+    if (!emailTarget || !emailSubject.trim() || !emailMessage.trim()) return;
+    setEmailSending(true);
+    try {
+      await api.post("/admin/email/direct", {
+        userId: emailTarget.id,
+        subject: emailSubject.trim(),
+        message: emailMessage.trim(),
+      });
+      toast.success(`Email sent to ${emailTarget.firstName}`);
+      setEmailTarget(null);
+      setEmailSubject("");
+      setEmailMessage("");
+    } catch {
+      // interceptor handles toast
+    } finally {
+      setEmailSending(false);
+    }
+  }
 
   async function changeRole(u: User, role: "host" | "user") {
     setActionLoading(u.id + "-role");
@@ -331,7 +358,16 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center justify-end gap-2">
-                            {/* View host detail */}
+                            {/* View profile */}
+                            <Link
+                              href={`/users/${u.id}`}
+                              title="View profile"
+                              className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 flex items-center justify-center transition"
+                            >
+                              <FaUser className="text-xs" />
+                            </Link>
+
+                            {/* View host properties slide-over */}
                             {u.role === "host" && (
                               <button
                                 onClick={() => openHostDetail(u)}
@@ -388,6 +424,26 @@ export default function AdminUsersPage() {
                                   : "Rate"}
                               </button>
                             )}
+
+                            {/* Call */}
+                            {u.phone && (
+                              <a
+                                href={`tel:${u.phone}`}
+                                title={`Call ${u.phone}`}
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50 flex items-center justify-center transition"
+                              >
+                                <FaPhone className="text-xs" />
+                              </a>
+                            )}
+
+                            {/* Email */}
+                            <button
+                              onClick={() => { setEmailTarget(u); setEmailSubject(""); setEmailMessage(""); }}
+                              title={`Email ${u.email}`}
+                              className="w-8 h-8 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 flex items-center justify-center transition"
+                            >
+                              <FaEnvelope className="text-xs" />
+                            </button>
 
                             {/* Delete */}
                             {u.role !== "admin" && (
@@ -606,13 +662,17 @@ export default function AdminUsersPage() {
                       <FaPhone className="text-xs" />
                     </a>
                   )}
-                  <a
-                    href={`mailto:${hostDetailTarget.email}`}
+                  <button
+                    onClick={() => {
+                      setEmailTarget(hostDetailTarget);
+                      setEmailSubject("");
+                      setEmailMessage("");
+                    }}
                     className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition"
                     title={`Email ${hostDetailTarget.email}`}
                   >
                     <FaEnvelope className="text-xs" />
-                  </a>
+                  </button>
                   <a
                     href={`/hosts/${hostDetailTarget.id}`}
                     target="_blank"
@@ -835,6 +895,75 @@ export default function AdminUsersPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition"
                 >
                   Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Direct email modal */}
+      <AnimatePresence>
+        {emailTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setEmailTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Send email</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">To: {emailTarget.firstName} {emailTarget.lastName} &lt;{emailTarget.email}&gt;</p>
+                </div>
+                <button onClick={() => setEmailTarget(null)} className="text-gray-400 hover:text-black transition p-1">
+                  <FaTimes />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="e.g. Your account on Asavio"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Message</label>
+                  <textarea
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={6}
+                    placeholder="Write your message here…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setEmailTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition flex items-center justify-center gap-2"
+                >
+                  <FaEnvelope className="text-xs" />
+                  {emailSending ? "Sending…" : "Send email"}
                 </button>
               </div>
             </motion.div>

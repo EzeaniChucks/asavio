@@ -3,7 +3,6 @@
 // app/dashboard/admin/bookings/page.tsx
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaArrowLeft,
@@ -16,6 +15,7 @@ import {
   FaTrophy,
   FaTimesCircle,
 } from "react-icons/fa";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
@@ -214,10 +214,14 @@ export default function AdminBookingsPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
+                          <Link
+                            href={`/users/${b.user?.id}`}
+                            className="flex items-center gap-1 hover:text-black transition"
+                            title="View guest profile"
+                          >
                             <FaUser className="text-gray-300" />
                             {b.user?.firstName} {b.user?.lastName}
-                          </span>
+                          </Link>
                           <span className="flex items-center gap-1">
                             <FaCalendarAlt className="text-gray-300" />
                             {new Date(b.checkIn).toLocaleDateString()} —{" "}

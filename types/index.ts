@@ -280,6 +280,7 @@ export interface RegisterCredentials {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string;
   password: string;
   role?: "user" | "host";
 }

@@ -206,7 +206,7 @@ export default function PublicHostProfilePage() {
             {(host.responseRate ?? 0) > 0 && (
               <div className="flex items-center justify-center sm:justify-start gap-1 text-sm text-gray-600">
                 <FaHeart className="w-3.5 h-3.5 text-rose-400" />
-                <span>{host.responseRate}% response rate</span>
+                <span>{Math.round(Number(host.responseRate) * 100)}% response rate</span>
               </div>
             )}
           </div>

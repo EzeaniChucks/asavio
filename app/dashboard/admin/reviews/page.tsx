@@ -193,17 +193,23 @@ export default function AdminReviewsPage() {
                     >
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
-                        <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                          {r.user?.firstName?.[0]}
-                          {r.user?.lastName?.[0]}
-                        </div>
+                        <Link href={`/users/${r.user?.id}`} title="View profile">
+                          <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm flex-shrink-0 hover:opacity-80 transition">
+                            {r.user?.firstName?.[0]}
+                            {r.user?.lastName?.[0]}
+                          </div>
+                        </Link>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <p className="font-medium text-gray-900 text-sm">
+                            <Link
+                              href={`/users/${r.user?.id}`}
+                              className="font-medium text-gray-900 text-sm hover:text-black hover:underline transition"
+                              title="View reviewer profile"
+                            >
                               {r.user?.firstName} {r.user?.lastName}
-                            </p>
+                            </Link>
                             <StarRating rating={r.rating} />
                           </div>
                           {r.propertyId && (
