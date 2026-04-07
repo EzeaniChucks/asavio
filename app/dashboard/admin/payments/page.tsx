@@ -191,7 +191,7 @@ export default function AdminPaymentsPage() {
                       </span>
                     </div>
                     <p className="font-semibold text-gray-900 truncate">
-                      {(booking as any).property?.title ?? (booking as any).vehicle ? `${(booking as any).vehicle?.make} ${(booking as any).vehicle?.model}` : "—"}
+                      {(booking as any).property?.title ?? ((booking as any).vehicle ? `${(booking as any).vehicle?.make ?? ""} ${(booking as any).vehicle?.model ?? ""}`.trim() : "—")}
                     </p>
                     <p className="text-sm text-gray-500">
                       Guest: <span className="font-medium text-gray-700">{(booking as any).user?.email ?? booking.userId}</span>

@@ -16,6 +16,7 @@ import {
   FaArrowRight,
   FaEdit,
   FaHeart,
+  FaHeadset,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -385,6 +386,13 @@ export default function UserDashboard() {
               className="block w-full text-center py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-black transition-colors"
             >
               Browse properties
+            </Link>
+            <Link
+              href="/support"
+              className="block w-full text-center py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-black transition-colors flex items-center justify-center gap-2"
+            >
+              <FaHeadset className="text-gray-400" />
+              Help &amp; Support
             </Link>
           </div>
         </div>

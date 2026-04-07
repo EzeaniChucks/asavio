@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { FaBars, FaTimes, FaUser, FaChevronDown, FaComments } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationBell from "@/components/ui/NotificationBell";
@@ -48,7 +49,8 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className={`font-playfair text-2xl font-bold ${logoColor}`}>
+          <Link href="/" className={`font-playfair text-2xl font-bold flex items-center ${logoColor}`}>
+            <Image src="/logo.png" alt="A" width={38} height={38} className="mr-0.5 inline-block" />
             Asavio
           </Link>
 
@@ -138,6 +140,13 @@ export default function Navbar() {
                         onClick={() => setUserMenuOpen(false)}
                       >
                         Account Settings
+                      </Link>
+                      <Link
+                        href="/support"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Help &amp; Support
                       </Link>
                       <hr className="my-1 border-gray-100" />
                       <button
@@ -251,6 +260,13 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                   >
                     Account Settings
+                  </Link>
+                  <Link
+                    href="/support"
+                    className="text-gray-700 py-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Help &amp; Support
                   </Link>
                   <button
                     onClick={() => {

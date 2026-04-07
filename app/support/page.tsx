@@ -97,7 +97,7 @@ function SupportContent() {
             <Image src="/logo_with_text.png" alt="Asavio" width={100} height={32} className="h-8 w-auto" />
           </Link>
           {isAuthenticated ? (
-            <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-black transition-colors">
+            <Link href="/dashboard/user" className="text-sm font-medium text-gray-700 hover:text-black transition-colors">
               My dashboard
             </Link>
           ) : (
