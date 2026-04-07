@@ -22,6 +22,8 @@ import {
   FaBullhorn,
   FaShieldAlt,
   FaClipboardList,
+  FaCreditCard,
+  FaHeadset,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -149,6 +151,26 @@ const ALL_NAV_LINKS = [
     desc: "Full history of admin actions on the platform",
     color: "bg-teal-50",
     iconColor: "text-teal-600",
+  },
+  {
+    href: "/dashboard/admin/payments",
+    permission: P.MANAGE_BOOKINGS,
+    tabLabel: "Payments",
+    icon: <FaCreditCard className="text-xl" />,
+    label: "Pending Payments",
+    desc: "Verify Paystack charges and resolve stuck bookings",
+    color: "bg-amber-50",
+    iconColor: "text-amber-600",
+  },
+  {
+    href: "/dashboard/admin/support",
+    permission: P.MANAGE_SUPPORT,
+    tabLabel: "Support",
+    icon: <FaHeadset className="text-xl" />,
+    label: "Guest Support",
+    desc: "View and respond to guest complaints and platform issues",
+    color: "bg-cyan-50",
+    iconColor: "text-cyan-600",
   },
 ];
 
