@@ -47,7 +47,11 @@ interface BookedRange {
 }
 
 function toYMD(date: Date): string {
-  return date.toISOString().split("T")[0];
+  // Use local date parts — toISOString() is UTC and shifts dates in UTC+1 (Nigeria/WAT)
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function formatDisplay(dateStr: string): string {
@@ -115,13 +119,10 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
     return () => document.removeEventListener("mousedown", handler);
   }, [calendarOpen]);
 
+  // Uses local YYYY-MM-DD string comparison — avoids UTC shift bugs (Nigeria is UTC+1).
   const isDateBlocked = (date: Date): boolean => {
-    const d = date.getTime();
-    return bookedRanges.some((range) => {
-      const from = new Date(range.checkIn).getTime();
-      const to = new Date(range.checkOut).getTime();
-      return d >= from && d < to;
-    });
+    const ymd = toYMD(date);
+    return bookedRanges.some((range) => ymd >= range.checkIn && ymd < range.checkOut);
   };
 
   const handleRangeChange = (ranges: RangeKeyDict) => {
