@@ -1,7 +1,7 @@
 "use client";
 
 // app/dashboard/admin/support/page.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -63,7 +63,7 @@ const CATEGORY_LABEL: Record<TicketCategory, string> = {
   other:   "Other",
 };
 
-export default function AdminSupportPage() {
+function AdminSupportContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -358,5 +358,13 @@ export default function AdminSupportPage() {
         </div>
       </div>
     </AdminPageGuard>
+  );
+}
+
+export default function AdminSupportPage() {
+  return (
+    <Suspense>
+      <AdminSupportContent />
+    </Suspense>
   );
 }

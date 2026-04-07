@@ -1,7 +1,7 @@
 "use client";
 
 // app/support/page.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,7 +40,7 @@ const STATUS_STYLE: Record<TicketStatus, string> = {
   closed:      "bg-gray-100 text-gray-500",
 };
 
-export default function SupportPage() {
+function SupportContent() {
   const { isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
 
@@ -288,5 +288,13 @@ export default function SupportPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SupportPage() {
+  return (
+    <Suspense>
+      <SupportContent />
+    </Suspense>
   );
 }
