@@ -17,12 +17,19 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
-import { Property } from "@/types";
+import { Property, Vehicle } from "@/types";
 import toast from "react-hot-toast";
 
 interface BlockedRange {
   from: string;
   to: string;
+}
+
+type ListingType = "property" | "vehicle";
+
+interface ListingOption {
+  id: string;
+  label: string;
 }
 
 function toYMD(date: Date): string {
@@ -41,8 +48,12 @@ export default function HostAvailabilityPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
+  const [listingType, setListingType] = useState<ListingType>("property");
+
   const [properties, setProperties] = useState<Property[]>([]);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
+  const [selectedId, setSelectedId] = useState<string>("");
   const [blockedDates, setBlockedDates] = useState<BlockedRange[]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,7 +74,7 @@ export default function HostAvailabilityPage() {
     }
   }, [authLoading, isAuthenticated, user, router]);
 
-  // Load host's properties
+  // Load host's listings
   useEffect(() => {
     if (!user) return;
     api
@@ -71,29 +82,50 @@ export default function HostAvailabilityPage() {
       .then((res) => {
         const props: Property[] = res.data.data.properties;
         setProperties(props);
-        if (props.length > 0) setSelectedPropertyId(props[0].id);
+      })
+      .catch(() => {});
+    api
+      .get("/vehicles/host/my")
+      .then((res) => {
+        const vs: Vehicle[] = res.data.data.vehicles;
+        setVehicles(vs);
       })
       .catch(() => {});
   }, [user]);
 
-  // Load blocked dates when property selection changes
+  // Compute the current listing options based on selected type
+  const listings: ListingOption[] = listingType === "property"
+    ? properties.map((p) => ({ id: p.id, label: p.title }))
+    : vehicles.map((v) => ({ id: v.id, label: `${v.year} ${v.make} ${v.model}` }));
+
+  // When listing type changes, reset selection to first item of new type
   useEffect(() => {
-    if (!selectedPropertyId) return;
+    const options = listingType === "property"
+      ? properties.map((p) => p.id)
+      : vehicles.map((v) => v.id);
+    setSelectedId(options[0] ?? "");
+    setBlockedDates([]);
+    setShowPicker(false);
+  }, [listingType, properties, vehicles]);
+
+  // Load blocked dates when selection changes
+  useEffect(() => {
+    if (!selectedId) return;
     setIsFetching(true);
+    const endpoint = listingType === "property"
+      ? `/properties/${selectedId}`
+      : `/vehicles/${selectedId}`;
     api
-      .get(`/properties/${selectedPropertyId}/booked-dates`)
+      .get(endpoint)
       .then((res) => {
-        // booked-dates returns both real bookings and blocked ranges
-        // The property's own blocked dates are what we manage; filter by
-        // fetching the raw property to get blockedDates only
-        return api.get(`/properties/${selectedPropertyId}`);
-      })
-      .then((res) => {
-        setBlockedDates(res.data.data.property.blockedDates ?? []);
+        const item = listingType === "property"
+          ? res.data.data.property
+          : res.data.data.vehicle;
+        setBlockedDates(item.blockedDates ?? []);
       })
       .catch(() => setBlockedDates([]))
       .finally(() => setIsFetching(false));
-  }, [selectedPropertyId]);
+  }, [selectedId, listingType]);
 
   const handlePickerChange = (ranges: RangeKeyDict) => {
     const sel = ranges.selection;
@@ -111,7 +143,6 @@ export default function HostAvailabilityPage() {
       toast.error("Select a range — start and end must be different days");
       return;
     }
-    // Avoid duplicates
     const exists = blockedDates.some((r) => r.from === from && r.to === to);
     if (exists) {
       toast.error("This range is already blocked");
@@ -126,10 +157,13 @@ export default function HostAvailabilityPage() {
   };
 
   const saveChanges = async () => {
-    if (!selectedPropertyId) return;
+    if (!selectedId) return;
     setIsSaving(true);
+    const endpoint = listingType === "property"
+      ? `/properties/${selectedId}/blocked-dates`
+      : `/vehicles/${selectedId}/blocked-dates`;
     try {
-      await api.patch(`/properties/${selectedPropertyId}/blocked-dates`, { blockedDates });
+      await api.patch(endpoint, { blockedDates });
       toast.success("Availability updated");
     } catch {
       // interceptor shows error toast
@@ -145,6 +179,8 @@ export default function HostAvailabilityPage() {
       </div>
     );
   }
+
+  const hasListings = listings.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -163,34 +199,56 @@ export default function HostAvailabilityPage() {
               Manage Availability
             </h1>
             <p className="text-xs text-gray-400 mt-0.5">
-              Block specific date ranges so guests can&apos;t book during those periods.
+              Block dates so guests can&apos;t book during those periods — useful when booked outside Asavio.
             </p>
           </div>
         </div>
 
-        {properties.length === 0 ? (
+        {/* Listing type toggle */}
+        <div className="flex gap-2 mb-6">
+          {(["property", "vehicle"] as ListingType[]).map((type) => (
+            <button
+              key={type}
+              onClick={() => setListingType(type)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+                listingType === type
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              {type === "property" ? "Properties" : "Vehicles"}
+            </button>
+          ))}
+        </div>
+
+        {!hasListings ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <p className="text-gray-500">You have no listings yet.</p>
-            <Link href="/dashboard/host/properties/new" className="btn-primary mt-4 inline-block">
-              Add a listing
+            <p className="text-gray-500">
+              You have no {listingType === "property" ? "properties" : "vehicles"} yet.
+            </p>
+            <Link
+              href={listingType === "property" ? "/dashboard/host/properties/new" : "/dashboard/host/vehicles/new"}
+              className="btn-primary mt-4 inline-block"
+            >
+              Add a {listingType === "property" ? "property" : "vehicle"}
             </Link>
           </div>
         ) : (
           <>
-            {/* Property selector */}
-            {properties.length > 1 && (
+            {/* Listing selector */}
+            {listings.length > 1 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select property
+                  Select {listingType === "property" ? "property" : "vehicle"}
                 </label>
                 <select
-                  value={selectedPropertyId}
-                  onChange={(e) => setSelectedPropertyId(e.target.value)}
+                  value={selectedId}
+                  onChange={(e) => setSelectedId(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
                 >
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
+                  {listings.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.label}
                     </option>
                   ))}
                 </select>
@@ -271,7 +329,7 @@ export default function HostAvailabilityPage() {
                               (new Date(range.to).getTime() - new Date(range.from).getTime()) /
                                 (1000 * 60 * 60 * 24)
                             )}{" "}
-                            night(s) blocked
+                            {listingType === "property" ? "night(s)" : "day(s)"} blocked
                           </p>
                         </div>
                         <button

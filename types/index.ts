@@ -236,6 +236,7 @@ export interface Vehicle {
   featureVideoUrl?: string | null;
   featureVideoPublicId?: string | null;
   cautionFee?: number | null;
+  blockedDates?: { from: string; to: string }[];
   createdAt: string;
   updatedAt: string;
 }
