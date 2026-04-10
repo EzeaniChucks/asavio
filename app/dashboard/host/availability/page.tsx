@@ -1,7 +1,7 @@
 "use client";
 
 // app/dashboard/host/availability/page.tsx
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DateRange } from "react-date-range";
@@ -45,7 +45,7 @@ function formatDisplay(dateStr: string): string {
   });
 }
 
-export default function HostAvailabilityPage() {
+function HostAvailabilityPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -500,5 +500,13 @@ export default function HostAvailabilityPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <HostAvailabilityPage />
+    </Suspense>
   );
 }
