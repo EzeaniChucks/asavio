@@ -53,6 +53,9 @@ export default function EditVehiclePage() {
     checkInInstructions: "",
     cautionFee: "",
     cancellationPolicy: "flexible",
+    travelZone: "Lagos",
+    allowInterstate: false,
+    interstateSurchargePerDay: "",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
@@ -81,6 +84,9 @@ export default function EditVehiclePage() {
           checkInInstructions: (v as any).checkInInstructions ?? "",
           cautionFee: v.cautionFee != null ? String(v.cautionFee) : "",
           cancellationPolicy: v.cancellationPolicy ?? "flexible",
+          travelZone: v.travelZone ?? "Lagos",
+          allowInterstate: v.allowInterstate ?? false,
+          interstateSurchargePerDay: v.interstateSurchargePerDay != null ? String(v.interstateSurchargePerDay) : "",
         });
         setSelectedFeatures(v.features ?? []);
       })
@@ -187,6 +193,13 @@ export default function EditVehiclePage() {
       if (form.cautionFee && Number(form.cautionFee) > 0) fd.append("cautionFee", form.cautionFee);
       else fd.append("cautionFee", "");
       fd.append("cancellationPolicy", form.cancellationPolicy ?? "flexible");
+      fd.append("travelZone", form.travelZone || "Lagos");
+      fd.append("allowInterstate", String(form.allowInterstate));
+      if (form.allowInterstate && form.interstateSurchargePerDay) {
+        fd.append("interstateSurchargePerDay", form.interstateSurchargePerDay);
+      } else {
+        fd.append("interstateSurchargePerDay", "");
+      }
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       markedForRemoval.forEach((pid) => fd.append("removeImagePublicIds", pid));
       newFiles.forEach((file) => fd.append("images", file));
@@ -479,6 +492,65 @@ export default function EditVehiclePage() {
               rows={4}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
             />
+          </div>
+
+          {/* Travel zone */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+            <div>
+              <h2 className="font-semibold text-gray-900">Travel zone</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Define where guests may take this vehicle. Guests booking outside the base zone pay an additional surcharge.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Base zone *</label>
+              <input
+                type="text"
+                value={form.travelZone}
+                onChange={(e) => set("travelZone", e.target.value)}
+                placeholder="e.g. Lagos, Abuja, Port Harcourt"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+              <div>
+                <p className="text-sm font-medium text-gray-800">Allow interstate travel</p>
+                <p className="text-xs text-gray-400">Guests can take this vehicle to other states</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  set("allowInterstate", !form.allowInterstate);
+                  if (form.allowInterstate) set("interstateSurchargePerDay", "");
+                }}
+                className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+                  form.allowInterstate ? "bg-black" : "bg-gray-200"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                    form.allowInterstate ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {form.allowInterstate && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Interstate surcharge / day (₦) <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="number"
+                  value={form.interstateSurchargePerDay}
+                  onChange={(e) => set("interstateSurchargePerDay", e.target.value)}
+                  min={0}
+                  placeholder="e.g. 10000"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <p className="text-xs text-gray-400 mt-1">Added on top of the base daily rate for interstate trips.</p>
+              </div>
+            )}
           </div>
 
           {/* Cancellation policy */}

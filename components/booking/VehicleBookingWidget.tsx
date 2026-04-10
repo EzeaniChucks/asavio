@@ -27,6 +27,9 @@ interface Vehicle {
   pricePerDay: number;
   priceWithDriverPerDay?: number | null;
   seats: number;
+  travelZone?: string;
+  allowInterstate?: boolean;
+  interstateSurchargePerDay?: number | null;
 }
 
 interface VehicleBookingWidgetProps {
@@ -39,6 +42,8 @@ interface AvailabilityResult {
   pricePerDay: number;
   priceWithDriverPerDay: number | null;
   totalPrice: number;
+  interstateSurchargePerDay?: number | null;
+  effectiveDailyRate?: number;
 }
 
 interface BookedRange {
@@ -73,6 +78,8 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
   const [pickUp, setPickUp] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [withDriver, setWithDriver] = useState(false);
+  const [travelScope, setTravelScope] = useState<"local" | "interstate">("local");
+  const [destination, setDestination] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [showRequests, setShowRequests] = useState(false);
 
@@ -146,7 +153,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
     }
   };
 
-  // Check availability whenever dates or driver option changes
+  // Check availability whenever dates, driver option, or travel scope changes
   useEffect(() => {
     if (!pickUp || !returnDate) {
       setAvailability(null);
@@ -158,7 +165,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
     const timeout = setTimeout(() => {
       api
         .get(
-          `/bookings/availability/vehicle?vehicleId=${vehicle.id}&checkIn=${pickUp}&checkOut=${returnDate}&withDriver=${withDriver}`
+          `/bookings/availability/vehicle?vehicleId=${vehicle.id}&checkIn=${pickUp}&checkOut=${returnDate}&withDriver=${withDriver}&travelScope=${travelScope}`
         )
         .then((res) => setAvailability(res.data.data))
         .catch(() => setAvailability(null))
@@ -166,7 +173,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [pickUp, returnDate, withDriver, vehicle.id]);
+  }, [pickUp, returnDate, withDriver, travelScope, vehicle.id]);
 
   const handleBook = async () => {
     if (!isAuthenticated) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
@@ -180,6 +187,8 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
         checkOut: returnDate,
         guests: 1,
         withDriver,
+        travelScope,
+        destination: travelScope === "interstate" ? destination.trim() || undefined : undefined,
         specialRequests: specialRequests.trim() || undefined,
       });
       const bookingId = bookingRes.data.data.booking.id;
@@ -193,10 +202,19 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
   };
 
   const days = availability?.days ?? 0;
-  const activeRate = withDriver && availability?.priceWithDriverPerDay
-    ? availability.priceWithDriverPerDay
-    : availability?.pricePerDay ?? Number(vehicle.pricePerDay);
-  const canBook = pickUp && returnDate && availability?.available && days > 0;
+  const activeRate = availability?.effectiveDailyRate
+    ?? (withDriver && availability?.priceWithDriverPerDay
+      ? availability.priceWithDriverPerDay
+      : availability?.pricePerDay ?? Number(vehicle.pricePerDay));
+  const surcharge = travelScope === "interstate" && availability?.interstateSurchargePerDay
+    ? Number(availability.interstateSurchargePerDay)
+    : 0;
+  const canBook =
+    pickUp &&
+    returnDate &&
+    availability?.available &&
+    days > 0 &&
+    (travelScope !== "interstate" || destination.trim().length > 0);
 
   return (
     <motion.div
@@ -331,6 +349,56 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
         </div>
       )}
 
+      {/* Travel scope selector */}
+      {vehicle.allowInterstate && (
+        <div className="border border-gray-200 rounded-xl p-3 mb-3">
+          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Trip scope</p>
+          <div className="flex gap-2 mb-1">
+            <button
+              type="button"
+              onClick={() => setTravelScope("local")}
+              className={`flex-1 py-2 text-sm rounded-lg border transition-colors ${
+                travelScope === "local"
+                  ? "bg-black text-white border-black"
+                  : "border-gray-200 text-gray-700 hover:border-gray-400"
+              }`}
+            >
+              Within {vehicle.travelZone || "base zone"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTravelScope("interstate")}
+              className={`flex-1 py-2 text-sm rounded-lg border transition-colors ${
+                travelScope === "interstate"
+                  ? "bg-black text-white border-black"
+                  : "border-gray-200 text-gray-700 hover:border-gray-400"
+              }`}
+            >
+              Interstate
+              {vehicle.interstateSurchargePerDay != null && Number(vehicle.interstateSurchargePerDay) > 0 && (
+                <span className="text-xs opacity-70 ml-1">
+                  +₦{Number(vehicle.interstateSurchargePerDay).toLocaleString()}/day
+                </span>
+              )}
+            </button>
+          </div>
+          {travelScope === "interstate" && (
+            <div className="mt-2">
+              <label className="text-xs text-gray-500 mb-1 block">Destination *</label>
+              <input
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g. Abuja, FCT"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+              />
+              {!destination.trim() && (
+                <p className="text-xs text-amber-600 mt-1">Please enter your destination to book.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Availability indicator */}
       {pickUp && returnDate && (
         <div className="mb-3">
@@ -390,12 +458,16 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
       {/* Price breakdown */}
       {days > 0 && availability?.available && (
         <div className="mt-5 space-y-2 text-sm border-t border-gray-100 pt-5">
-          {withDriver && hasDriverOption && (
-            <div className="flex justify-between text-gray-500 text-xs">
+          {(withDriver && hasDriverOption) || travelScope === "interstate" ? (
+            <div className="flex justify-between text-gray-500 text-xs gap-2">
               <span>Rate</span>
-              <span className="font-medium text-gray-700">With driver</span>
+              <span className="font-medium text-gray-700 text-right">
+                {withDriver && hasDriverOption ? "With driver" : ""}
+                {withDriver && hasDriverOption && travelScope === "interstate" ? " + " : ""}
+                {travelScope === "interstate" ? "Interstate" : ""}
+              </span>
             </div>
-          )}
+          ) : null}
           <div className="flex justify-between text-gray-600">
             <span>
               ₦{Number(activeRate).toLocaleString()} × {days}{" "}
@@ -403,6 +475,11 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
             </span>
             <span>₦{availability.totalPrice.toLocaleString()}</span>
           </div>
+          {surcharge > 0 && (
+            <div className="flex justify-between text-gray-400 text-xs">
+              <span>Incl. interstate surcharge (₦{surcharge.toLocaleString()} × {days} days)</span>
+            </div>
+          )}
           <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
             <span>Total</span>
             <span>₦{availability.totalPrice.toLocaleString()}</span>

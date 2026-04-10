@@ -35,6 +35,9 @@ export default function NewVehiclePage() {
     checkInInstructions: "",
     cautionFee: "",
     cancellationPolicy: "flexible",
+    travelZone: "Lagos",
+    allowInterstate: false,
+    interstateSurchargePerDay: "",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
@@ -96,6 +99,11 @@ export default function NewVehiclePage() {
       if (form.checkInInstructions.trim()) fd.append("checkInInstructions", form.checkInInstructions.trim());
       if (form.cautionFee && Number(form.cautionFee) > 0) fd.append("cautionFee", form.cautionFee);
       fd.append("cancellationPolicy", form.cancellationPolicy ?? "flexible");
+      fd.append("travelZone", form.travelZone || "Lagos");
+      fd.append("allowInterstate", String(form.allowInterstate));
+      if (form.allowInterstate && form.interstateSurchargePerDay && Number(form.interstateSurchargePerDay) > 0) {
+        fd.append("interstateSurchargePerDay", form.interstateSurchargePerDay);
+      }
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       images.forEach((img) => fd.append("images", img));
 
@@ -344,6 +352,55 @@ export default function NewVehiclePage() {
               rows={4}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
             />
+          </div>
+
+          {/* Travel zone */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+            <div>
+              <h2 className="font-semibold text-gray-900">Travel zone</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Define where guests may take this vehicle. Guests see this before booking.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Base zone <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={form.travelZone}
+                onChange={(e) => set("travelZone", e.target.value)}
+                placeholder="e.g. Lagos, Abuja, Port Harcourt"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <p className="text-xs text-gray-400 mt-1">Guests booking within this zone pay your base daily rate.</p>
+            </div>
+            <div className="flex items-center justify-between py-3 border border-gray-200 rounded-xl px-4">
+              <div>
+                <p className="text-sm font-medium text-gray-800">Allow interstate travel</p>
+                <p className="text-xs text-gray-400 mt-0.5">Guests can declare they're traveling outside the base zone</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => set("allowInterstate", !form.allowInterstate)}
+                className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${form.allowInterstate ? "bg-black" : "bg-gray-200"}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${form.allowInterstate ? "translate-x-5" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+            {form.allowInterstate && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Interstate surcharge per day (optional)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">₦</span>
+                  <input
+                    type="number"
+                    value={form.interstateSurchargePerDay}
+                    onChange={(e) => set("interstateSurchargePerDay", e.target.value)}
+                    placeholder="e.g. 15000"
+                    min={0}
+                    className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Added on top of the base daily rate when a guest selects interstate travel.</p>
+              </div>
+            )}
           </div>
 
           {/* Cancellation policy */}

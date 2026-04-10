@@ -214,6 +214,8 @@ export interface Booking {
   cancelledBy?: "guest" | "host" | "admin" | null;
   cancellationReason?: string | null;
   vehicle?: Vehicle;
+  travelScope?: "local" | "interstate" | null;
+  destination?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -244,6 +246,9 @@ export interface Vehicle {
   cautionFee?: number | null;
   blockedDates?: { from: string; to: string }[];
   cancellationPolicy?: string;
+  travelZone?: string;
+  allowInterstate?: boolean;
+  interstateSurchargePerDay?: number | null;
   createdAt: string;
   updatedAt: string;
 }

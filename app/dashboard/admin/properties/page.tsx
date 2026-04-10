@@ -11,6 +11,7 @@ import {
   FaSearch,
   FaTrash,
   FaExternalLinkAlt,
+  FaCalendarTimes,
   FaChevronLeft,
   FaChevronRight,
   FaToggleOn,
@@ -27,13 +28,14 @@ import AdminPageGuard from "@/components/admin/AdminPageGuard";
 import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 import AdminGalleryModal from "@/components/admin/AdminGalleryModal";
 
-type StatusFilter = "all" | "pending" | "approved" | "rejected";
+type StatusFilter = "all" | "pending" | "approved" | "rejected" | "archived";
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "pending", label: "Pending" },
   { key: "approved", label: "Approved" },
   { key: "rejected", label: "Rejected" },
+  { key: "archived", label: "Archived" },
 ];
 
 export default function AdminPropertiesPage() {
@@ -64,9 +66,15 @@ export default function AdminPropertiesPage() {
     if (!user || user.role !== "admin") return;
     setIsLoading(true);
     try {
-      const params: Record<string, string | number> = { page, limit: LIMIT };
+      const params: Record<string, string | number | boolean> = { page, limit: LIMIT };
       if (search.trim()) params.search = search.trim();
-      if (statusFilter !== "all") params.status = statusFilter;
+      if (statusFilter === "archived") {
+        params.isAvailable = false;
+      } else {
+        // All other tabs exclude archived (hidden) listings
+        params.isAvailable = true;
+        if (statusFilter !== "all") params.status = statusFilter;
+      }
       const res = await api.get("/admin/properties", { params });
       const data = res.data.data ?? res.data;
       setProperties(data.properties ?? data);
@@ -112,17 +120,9 @@ export default function AdminPropertiesPage() {
   async function toggleAvailability(p: Property) {
     setActionLoading(p.id + "-toggle");
     try {
-      await api.patch(`/admin/properties/${p.id}`, {
-        isAvailable: !p.isAvailable,
-      });
-      toast.success(
-        `"${p.title}" marked ${!p.isAvailable ? "available" : "unavailable"}`
-      );
-      setProperties((prev) =>
-        prev.map((x) =>
-          x.id === p.id ? { ...x, isAvailable: !x.isAvailable } : x
-        )
-      );
+      await api.patch(`/admin/properties/${p.id}`, { isAvailable: !p.isAvailable });
+      toast.success(p.isAvailable ? `"${p.title}" archived` : `"${p.title}" restored`);
+      fetchProperties();
     } catch {
       // handled
     } finally {
@@ -180,7 +180,7 @@ export default function AdminPropertiesPage() {
               <h1 className="text-xl font-bold text-gray-900">
                 Property Management
               </h1>
-              <p className="text-xs text-gray-400 mt-0.5">{total} {statusFilter === "all" ? "total" : statusFilter} properties</p>
+              <p className="text-xs text-gray-400 mt-0.5">{total} {statusFilter === "all" ? "active" : statusFilter} properties</p>
             </div>
           </div>
           <Link
@@ -234,7 +234,7 @@ export default function AdminPropertiesPage() {
           </div>
         ) : properties.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400 text-sm">
-            No {statusFilter === "all" ? "" : statusFilter + " "}properties found.
+            No {statusFilter === "all" ? "active" : statusFilter} properties found.
           </div>
         ) : (
           <motion.div
@@ -271,6 +271,11 @@ export default function AdminPropertiesPage() {
                         </div>
                       )}
                       <div className="absolute top-2 right-2">{statusBadge(p)}</div>
+                      {!p.isAvailable && (
+                        <div className="absolute top-2 left-2">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Archived</span>
+                        </div>
+                      )}
                       {p.images?.length > 1 && (
                         <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
                           {p.images.length} photos
@@ -336,24 +341,35 @@ export default function AdminPropertiesPage() {
                           </button>
                         )}
 
-                        {/* Toggle availability (approved only) */}
+                        {/* Archive / Restore (approved listings only) */}
                         {p.status === "approved" && (
                           <button
                             onClick={() => toggleAvailability(p)}
                             disabled={actionLoading === p.id + "-toggle"}
-                            title={p.isAvailable ? "Hide listing" : "Show listing"}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
+                            title={p.isAvailable ? "Archive listing" : "Restore listing"}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 transition ${
+                              p.isAvailable
+                                ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                            }`}
                           >
                             {p.isAvailable ? (
-                              <FaToggleOn className="text-emerald-500 text-sm" />
+                              <><FaToggleOn className="text-emerald-500 text-sm" /> Archive</>
                             ) : (
-                              <FaToggleOff className="text-gray-400 text-sm" />
+                              <><FaToggleOff className="text-amber-500 text-sm" /> Restore</>
                             )}
-                            {p.isAvailable ? "Hide" : "Show"}
                           </button>
                         )}
 
                         <div className="ml-auto flex items-center gap-1">
+                          {/* Availability */}
+                          <Link
+                            href={`/dashboard/host/availability?type=property&id=${p.id}`}
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="Manage availability"
+                          >
+                            <FaCalendarTimes className="text-xs" />
+                          </Link>
                           {/* Edit */}
                           <Link
                             href={`/dashboard/host/properties/${p.id}/edit`}

@@ -449,9 +449,10 @@ export default function HostDashboard() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Link href={`/properties/${property.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="View"><FaEye /></Link>
-                      <button onClick={() => toggleAvailability(property)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={property.isAvailable ? "Hide" : "Publish"}>
+                      <button onClick={() => toggleAvailability(property)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={property.isAvailable ? "Hide listing" : "Publish listing"}>
                         {property.isAvailable ? <FaToggleOn className="text-green-500" /> : <FaToggleOff />}
                       </button>
+                      <Link href={`/dashboard/host/availability?type=property&id=${property.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="Block dates"><FaCalendarTimes /></Link>
                       <Link href={`/dashboard/host/properties/${property.id}/edit`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="Edit"><FaEdit /></Link>
                       <button onClick={() => deleteProperty(property.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><FaTrash /></button>
                     </div>
@@ -518,10 +519,11 @@ export default function HostDashboard() {
                         <Link href={`/vehicles/${vehicle.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="View"><FaEye /></Link>
                       )}
                       {vehicle.status === "approved" && (
-                        <button onClick={() => toggleVehicleAvailability(vehicle)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={vehicle.isAvailable ? "Hide" : "Publish"}>
+                        <button onClick={() => toggleVehicleAvailability(vehicle)} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title={vehicle.isAvailable ? "Hide listing" : "Publish listing"}>
                           {vehicle.isAvailable ? <FaToggleOn className="text-green-500" /> : <FaToggleOff />}
                         </button>
                       )}
+                      <Link href={`/dashboard/host/availability?type=vehicle&id=${vehicle.id}`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="Block dates"><FaCalendarTimes /></Link>
                       <Link href={`/dashboard/host/vehicles/${vehicle.id}/edit`} className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors" title="Edit"><FaEdit /></Link>
                       <button onClick={() => deleteVehicle(vehicle.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><FaTrash /></button>
                     </div>

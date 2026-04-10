@@ -14,9 +14,9 @@ const channels = [
   {
     icon: "💬",
     title: "WhatsApp",
-    detail: "+234 800 000 0000",
+    detail: "+234 810 377 2944",
     desc: "Mon – Sat, 8am – 8pm WAT",
-    href: "https://wa.me/2348000000000",
+    href: "https://wa.me/2348103772944",
   },
   {
     icon: "📍",

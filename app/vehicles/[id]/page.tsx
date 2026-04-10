@@ -265,7 +265,7 @@ export default function VehicleDetailPage() {
           <div>
             {/* Caution fee */}
             {vehicle.cautionFee != null && Number(vehicle.cautionFee) > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
                 <span>🔒</span>
                 <p>
                   <strong>Caution fee: ₦{Number(vehicle.cautionFee).toLocaleString("en-NG")}</strong>
@@ -273,6 +273,47 @@ export default function VehicleDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Travel zone */}
+            {vehicle.travelZone && (
+              <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 text-sm text-gray-700">
+                <span className="mt-0.5">📍</span>
+                <div>
+                  <strong>Travel zone: {vehicle.travelZone}</strong>
+                  {vehicle.allowInterstate ? (
+                    <span className="text-gray-500 ml-1">
+                      — Interstate travel allowed
+                      {vehicle.interstateSurchargePerDay != null && Number(vehicle.interstateSurchargePerDay) > 0
+                        ? ` (+₦${Number(vehicle.interstateSurchargePerDay).toLocaleString("en-NG")}/day surcharge)`
+                        : ""}
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 ml-1">— Interstate travel not permitted</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Cancellation policy */}
+            {(() => {
+              const policyMap: Record<string, { name: string; summary: string }> = {
+                flexible: { name: "Flexible", summary: "Full refund up to 24 h before pickup. After that, non-refundable." },
+                moderate: { name: "Moderate", summary: "Full refund up to 5 days before pickup. After that, non-refundable." },
+                firm:     { name: "Firm",     summary: "Full refund 14+ days · 50% refund 7–14 days · No refund within 7 days." },
+                strict:   { name: "Strict",   summary: "Full refund 30+ days · 50% refund 14–30 days · No refund within 14 days." },
+              };
+              const p = policyMap[(vehicle as any).cancellationPolicy ?? "flexible"] ?? policyMap.flexible;
+              return (
+                <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 text-sm text-gray-700">
+                  <span className="mt-0.5">🛡️</span>
+                  <div>
+                    <strong>Cancellation: {p.name}</strong>
+                    <span className="text-gray-500 ml-1">— {p.summary}</span>
+                    <span className="block text-xs text-gray-400 mt-0.5">Free cancellation within 24 h of booking if pickup is 7+ days away.</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick stats */}
             <div className="flex flex-wrap gap-6 pb-8 border-b border-gray-100 mb-8">

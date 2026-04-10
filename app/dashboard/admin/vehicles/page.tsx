@@ -12,6 +12,7 @@ import {
   FaTrash,
   FaExternalLinkAlt,
   FaEdit,
+  FaCalendarTimes,
   FaChevronLeft,
   FaChevronRight,
   FaCar,
@@ -28,13 +29,14 @@ import AdminPageGuard from "@/components/admin/AdminPageGuard";
 import { ADMIN_PERMISSIONS as P } from "@/lib/adminPermissions";
 import AdminGalleryModal from "@/components/admin/AdminGalleryModal";
 
-type StatusFilter = "all" | "pending" | "approved" | "rejected";
+type StatusFilter = "all" | "pending" | "approved" | "rejected" | "archived";
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "pending", label: "Pending" },
   { key: "approved", label: "Approved" },
   { key: "rejected", label: "Rejected" },
+  { key: "archived", label: "Archived" },
 ];
 
 export default function AdminVehiclesPage() {
@@ -65,9 +67,14 @@ export default function AdminVehiclesPage() {
     if (!user || user.role !== "admin") return;
     setIsLoading(true);
     try {
-      const params: Record<string, string | number> = { page, limit: LIMIT };
+      const params: Record<string, string | number | boolean> = { page, limit: LIMIT };
       if (search.trim()) params.search = search.trim();
-      if (statusFilter !== "all") params.status = statusFilter;
+      if (statusFilter === "archived") {
+        params.isAvailable = false;
+      } else {
+        params.isAvailable = true;
+        if (statusFilter !== "all") params.status = statusFilter;
+      }
       const res = await api.get("/admin/vehicles", { params });
       const data = res.data.data ?? res.data;
       setVehicles(data.vehicles ?? data);
@@ -109,8 +116,11 @@ export default function AdminVehiclesPage() {
     setActionLoading(v.id + "-toggle");
     try {
       await api.patch(`/admin/vehicles/${v.id}`, { isAvailable: !v.isAvailable });
-      toast.success(`"${v.year} ${v.make} ${v.model}" marked ${!v.isAvailable ? "available" : "unavailable"}`);
-      setVehicles((prev) => prev.map((x) => x.id === v.id ? { ...x, isAvailable: !x.isAvailable } : x));
+      toast.success(v.isAvailable
+        ? `"${v.year} ${v.make} ${v.model}" archived`
+        : `"${v.year} ${v.make} ${v.model}" restored`
+      );
+      fetchVehicles();
     } catch {
       // handled
     } finally {
@@ -166,7 +176,7 @@ export default function AdminVehiclesPage() {
             </Link>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Vehicle Management</h1>
-              <p className="text-xs text-gray-400 mt-0.5">{total} {statusFilter === "all" ? "total" : statusFilter} vehicles</p>
+              <p className="text-xs text-gray-400 mt-0.5">{total} {statusFilter === "all" ? "active" : statusFilter} vehicles</p>
             </div>
           </div>
           <Link
@@ -215,7 +225,7 @@ export default function AdminVehiclesPage() {
           </div>
         ) : vehicles.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400 text-sm">
-            No {statusFilter === "all" ? "" : statusFilter + " "}vehicles found.
+            No {statusFilter === "all" ? "active" : statusFilter} vehicles found.
           </div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -245,10 +255,13 @@ export default function AdminVehiclesPage() {
                       ) : (
                         <div className="flex items-center justify-center h-full text-4xl">🚗</div>
                       )}
-                      <div className="absolute top-2 left-2">
+                      <div className="absolute top-2 left-2 flex items-center gap-1">
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-black/70 text-white capitalize">
                           {v.vehicleType}
                         </span>
+                        {!v.isAvailable && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Archived</span>
+                        )}
                       </div>
                       <div className="absolute top-2 right-2">{statusBadge(v)}</div>
                       {v.images?.length > 1 && (
@@ -322,20 +335,23 @@ export default function AdminVehiclesPage() {
                           </button>
                         )}
 
-                        {/* Toggle availability (approved only) */}
+                        {/* Archive / Restore (approved listings only) */}
                         {v.status === "approved" && (
                           <button
                             onClick={() => toggleAvailability(v)}
                             disabled={actionLoading === v.id + "-toggle"}
-                            title={v.isAvailable ? "Hide vehicle" : "Show vehicle"}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition"
+                            title={v.isAvailable ? "Archive vehicle" : "Restore vehicle"}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 transition ${
+                              v.isAvailable
+                                ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                            }`}
                           >
                             {v.isAvailable ? (
-                              <FaToggleOn className="text-emerald-500 text-sm" />
+                              <><FaToggleOn className="text-emerald-500 text-sm" /> Archive</>
                             ) : (
-                              <FaToggleOff className="text-gray-400 text-sm" />
+                              <><FaToggleOff className="text-amber-500 text-sm" /> Restore</>
                             )}
-                            {v.isAvailable ? "Hide" : "Show"}
                           </button>
                         )}
 
@@ -347,6 +363,13 @@ export default function AdminVehiclesPage() {
                             title="View listing"
                           >
                             <FaExternalLinkAlt className="text-xs" />
+                          </Link>
+                          <Link
+                            href={`/dashboard/host/availability?type=vehicle&id=${v.id}`}
+                            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                            title="Manage availability"
+                          >
+                            <FaCalendarTimes className="text-xs" />
                           </Link>
                           <Link
                             href={`/dashboard/host/vehicles/${v.id}/edit`}
