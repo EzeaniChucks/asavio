@@ -16,11 +16,19 @@ import {
   FaTrophy,
   FaPhone,
   FaCreditCard,
+  FaShieldAlt,
 } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+
+const POLICY_DETAILS: Record<string, { name: string; summary: string }> = {
+  flexible: { name: "Flexible", summary: "Full refund up to 24 h before check-in." },
+  moderate: { name: "Moderate", summary: "Full refund up to 5 days before check-in." },
+  firm:     { name: "Firm",     summary: "Full refund 14+ days · 50% refund 7–14 days · No refund within 7 days." },
+  strict:   { name: "Strict",  summary: "Full refund 30+ days · 50% refund 14–30 days · No refund within 14 days." },
+};
 
 const STATUS_CONFIG = {
   awaiting_payment: {
@@ -49,6 +57,15 @@ const STATUS_CONFIG = {
   },
 };
 
+interface CancellationEstimate {
+  refundAmount: number;
+  inGracePeriod: boolean;
+  reason: string;
+  policy: string;
+  totalPaid: number;
+  listingTitle: string;
+}
+
 function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString("en-GB", {
     weekday: "short",
@@ -73,6 +90,12 @@ export default function BookingDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
+
+  // Cancellation flow state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [estimate, setEstimate] = useState<CancellationEstimate | null>(null);
+  const [isFetchingEstimate, setIsFetchingEstimate] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push("/login");
@@ -100,13 +123,33 @@ export default function BookingDetailPage() {
     }
   };
 
+  const openCancelModal = async () => {
+    setShowCancelModal(true);
+    setIsFetchingEstimate(true);
+    try {
+      const res = await api.get(`/bookings/${id}/cancellation-estimate`);
+      setEstimate(res.data.data);
+    } catch {
+      setEstimate(null);
+    } finally {
+      setIsFetchingEstimate(false);
+    }
+  };
+
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
     setIsCancelling(true);
     try {
-      await api.patch(`/bookings/${id}/status`, { status: "cancelled" });
+      await api.patch(`/bookings/${id}/status`, {
+        status: "cancelled",
+        cancellationReason: cancellationReason.trim() || undefined,
+      });
       setBooking((prev) => (prev ? { ...prev, status: "cancelled" } : prev));
-      toast.success("Booking cancelled");
+      setShowCancelModal(false);
+      toast.success(
+        estimate && estimate.refundAmount > 0
+          ? `Booking cancelled — ₦${Number(estimate.refundAmount).toLocaleString("en-NG")} refund is being processed`
+          : "Booking cancelled"
+      );
     } catch {
       toast.error("Failed to cancel booking");
     } finally {
@@ -130,6 +173,13 @@ export default function BookingDetailPage() {
   const canPayNow = booking.status === "awaiting_payment";
   const isGuest = user?.id === booking.userId;
   const isHostOrAdmin = user?.role === "host" || user?.role === "admin";
+
+  const listingTitle = booking.property?.title
+    ?? (booking.vehicle ? `${booking.vehicle.year} ${booking.vehicle.make} ${booking.vehicle.model}` : "your booking");
+  const listingPolicy = (booking.property as any)?.cancellationPolicy
+    ?? (booking.vehicle as any)?.cancellationPolicy
+    ?? "flexible";
+  const policyInfo = POLICY_DETAILS[listingPolicy] ?? POLICY_DETAILS.flexible;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -156,7 +206,7 @@ export default function BookingDetailPage() {
           </div>
         </motion.div>
 
-        {/* Property card */}
+        {/* Property/vehicle card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -165,34 +215,38 @@ export default function BookingDetailPage() {
         >
           <div className="flex gap-4 p-5">
             <Link
-              href={`/properties/${booking.property?.id}`}
+              href={booking.property ? `/properties/${booking.property?.id}` : `/vehicles/${booking.vehicle?.id}`}
               className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 block"
             >
-              {booking.property?.images?.[0]?.url ? (
+              {(booking.property?.images?.[0]?.url || (booking.vehicle as any)?.images?.[0]?.url) ? (
                 <Image
-                  src={booking.property.images[0].url}
-                  alt={booking.property.title}
+                  src={booking.property?.images?.[0]?.url ?? (booking.vehicle as any)?.images?.[0]?.url}
+                  alt={listingTitle}
                   fill
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl">🏠</div>
+                <div className="w-full h-full flex items-center justify-center text-3xl">
+                  {booking.vehicle ? "🚗" : "🏠"}
+                </div>
               )}
             </Link>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">
-                {booking.property?.propertyType}
+                {booking.property?.propertyType ?? booking.vehicle?.vehicleType}
               </p>
               <Link
-                href={`/properties/${booking.property?.id}`}
+                href={booking.property ? `/properties/${booking.property?.id}` : `/vehicles/${booking.vehicle?.id}`}
                 className="font-semibold text-gray-900 hover:underline block"
               >
-                {booking.property?.title}
+                {listingTitle}
               </Link>
-              <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
-                <FaMapMarkerAlt className="text-gray-400 text-xs" />
-                {booking.property?.location.city}, {booking.property?.location.country}
-              </p>
+              {booking.property && (
+                <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
+                  <FaMapMarkerAlt className="text-gray-400 text-xs" />
+                  {booking.property?.location?.city}, {booking.property?.location?.country}
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
@@ -209,7 +263,7 @@ export default function BookingDetailPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">
-                Check-in
+                {booking.vehicle ? "Pick-up" : "Check-in"}
               </p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
                 <FaCalendarAlt className="text-gray-400 text-xs" />
@@ -218,7 +272,7 @@ export default function BookingDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">
-                Check-out
+                {booking.vehicle ? "Return" : "Check-out"}
               </p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
                 <FaCalendarAlt className="text-gray-400 text-xs" />
@@ -240,7 +294,7 @@ export default function BookingDetailPage() {
           <div className="flex items-center justify-between py-3 border-t border-gray-100">
             <span className="text-gray-600">Duration</span>
             <span className="font-medium text-gray-900">
-              {nights} {nights === 1 ? "night" : "nights"}
+              {nights} {nights === 1 ? (booking.vehicle ? "day" : "night") : (booking.vehicle ? "days" : "nights")}
             </span>
           </div>
 
@@ -262,7 +316,11 @@ export default function BookingDetailPage() {
           <h2 className="font-semibold text-gray-900 mb-4">Price breakdown</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>₦{Number(booking.property?.pricePerNight).toLocaleString()} × {nights} nights</span>
+              <span>
+                ₦{booking.vehicle
+                  ? Number(booking.vehicle.pricePerDay).toLocaleString()
+                  : Number(booking.property?.pricePerNight).toLocaleString()} × {nights} {booking.vehicle ? "days" : "nights"}
+              </span>
               <span>₦{Number(booking.totalPrice).toLocaleString()}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-3">
@@ -309,6 +367,8 @@ export default function BookingDetailPage() {
               <span className={`font-medium capitalize ${
                 booking.paymentStatus === "paid"
                   ? "text-green-600"
+                  : booking.paymentStatus === "refunded"
+                  ? "text-blue-600"
                   : booking.paymentStatus === "failed"
                   ? "text-red-500"
                   : "text-orange-500"
@@ -316,8 +376,44 @@ export default function BookingDetailPage() {
                 {booking.paymentStatus}
               </span>
             </div>
+
+            {/* Refund row — shown when booking is cancelled and refund was issued */}
+            {booking.status === "cancelled" && booking.refundedAmount != null && Number(booking.refundedAmount) > 0 && (
+              <div className="flex justify-between text-sm text-blue-700 font-medium border-t border-blue-100 pt-3">
+                <span>Refund issued</span>
+                <span>₦{Number(booking.refundedAmount).toLocaleString()}</span>
+              </div>
+            )}
+            {booking.status === "cancelled" && (booking.refundedAmount == null || Number(booking.refundedAmount) === 0) && booking.paymentStatus === "paid" && (
+              <div className="flex justify-between text-sm text-gray-500 border-t border-gray-100 pt-3">
+                <span>Refund</span>
+                <span>None (non-refundable)</span>
+              </div>
+            )}
           </div>
         </motion.div>
+
+        {/* Cancellation policy — shown when booking is active */}
+        {(booking.status === "confirmed" || booking.status === "awaiting_payment") && isGuest && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            className="bg-white rounded-2xl border border-gray-100 p-5 mb-4"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <FaShieldAlt className="text-gray-400 text-sm" />
+              <h2 className="font-semibold text-gray-900">Cancellation policy</h2>
+              <span className="ml-auto text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {policyInfo.name}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600">{policyInfo.summary}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Free cancellation within 24 h of booking applies if check-in is 7+ days away.
+            </p>
+          </motion.div>
+        )}
 
         {/* Booking reference */}
         <motion.div
@@ -333,6 +429,12 @@ export default function BookingDetailPage() {
           <p className="text-xs text-gray-400 mt-2">
             Booked on {new Date(booking.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
           </p>
+          {booking.cancelledAt && (
+            <p className="text-xs text-red-400 mt-1">
+              Cancelled on {new Date(booking.cancelledAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+              {booking.cancelledBy ? ` by ${booking.cancelledBy}` : ""}
+            </p>
+          )}
         </motion.div>
 
         {/* Actions */}
@@ -349,23 +451,96 @@ export default function BookingDetailPage() {
           )}
 
           <Link
-            href={`/properties/${booking.property?.id}`}
+            href={booking.property ? `/properties/${booking.property?.id}` : `/vehicles/${booking.vehicle?.id}`}
             className="flex-1 text-center btn-secondary py-3"
           >
-            View property
+            View listing
           </Link>
 
           {isGuest && canCancel && (
             <button
-              onClick={handleCancel}
-              disabled={isCancelling}
-              className="flex-1 py-3 border-2 border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+              onClick={openCancelModal}
+              className="flex-1 py-3 border-2 border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors"
             >
-              {isCancelling ? "Cancelling…" : "Cancel booking"}
+              Cancel booking
             </button>
           )}
         </div>
       </div>
+
+      {/* Cancellation confirmation modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl"
+          >
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Cancel booking?</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              This cannot be undone. Please review your refund below before confirming.
+            </p>
+
+            {isFetchingEstimate ? (
+              <div className="flex justify-center py-6">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+              </div>
+            ) : estimate ? (
+              <div className="bg-gray-50 rounded-xl p-4 mb-5">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-600">Amount paid</span>
+                  <span className="font-medium text-gray-900">₦{Number(estimate.totalPaid).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm text-gray-600">Your refund</span>
+                  <span className={`font-bold text-lg ${estimate.refundAmount > 0 ? "text-green-600" : "text-red-500"}`}>
+                    {estimate.refundAmount > 0
+                      ? `₦${Number(estimate.refundAmount).toLocaleString()}`
+                      : "₦0 (no refund)"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 border-t border-gray-200 pt-3">{estimate.reason}</p>
+                {estimate.refundAmount > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Refunds typically appear within 5–7 business days depending on your bank.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason for cancellation (optional)
+              </label>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="e.g. Plans changed, emergency came up…"
+                rows={2}
+                maxLength={300}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                disabled={isCancelling}
+                className="flex-1 py-3 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Keep booking
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling || isFetchingEstimate}
+                className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isCancelling ? "Cancelling…" : "Yes, cancel"}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

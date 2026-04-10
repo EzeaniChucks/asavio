@@ -168,6 +168,7 @@ export interface Property {
   viewCount?: number;
   cautionFee?: number | null;
   nearbyPlaces?: string[] | null;
+  cancellationPolicy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -208,6 +209,11 @@ export interface Booking {
   payoutReference?: string;
   paymentNotes?: string;
   specialRequests?: string;
+  refundedAmount?: number | null;
+  cancelledAt?: string | null;
+  cancelledBy?: "guest" | "host" | "admin" | null;
+  cancellationReason?: string | null;
+  vehicle?: Vehicle;
   createdAt: string;
   updatedAt: string;
 }
@@ -237,6 +243,7 @@ export interface Vehicle {
   featureVideoPublicId?: string | null;
   cautionFee?: number | null;
   blockedDates?: { from: string; to: string }[];
+  cancellationPolicy?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -126,6 +126,7 @@ export default function EditPropertyPage() {
       fd.append("nearbyPlaces", JSON.stringify(data.nearbyPlaces ?? []));
       fd.append("amenities", JSON.stringify(data.amenities));
       fd.append("checkInInstructions", data.checkInInstructions?.trim() ?? "");
+      fd.append("cancellationPolicy", data.cancellationPolicy ?? "flexible");
       fd.append("location", JSON.stringify(data.location));
       markedForRemoval.forEach((pid) => fd.append("removeImagePublicIds", pid));
       newFiles.forEach((file) => fd.append("images", file));

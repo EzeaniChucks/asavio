@@ -275,7 +275,7 @@ export default function PropertyDetailPage() {
           <div>
             {/* Caution fee */}
             {property.cautionFee != null && Number(property.cautionFee) > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
                 <span>🔒</span>
                 <p>
                   <strong>Caution fee: ₦{Number(property.cautionFee).toLocaleString("en-NG")}</strong>
@@ -283,6 +283,27 @@ export default function PropertyDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Cancellation policy */}
+            {(() => {
+              const policyMap: Record<string, { name: string; summary: string }> = {
+                flexible: { name: "Flexible", summary: "Full refund up to 24 h before check-in. After that, non-refundable." },
+                moderate: { name: "Moderate", summary: "Full refund up to 5 days before check-in. After that, non-refundable." },
+                firm:     { name: "Firm",     summary: "Full refund 14+ days before check-in · 50% refund 7–14 days · No refund within 7 days." },
+                strict:   { name: "Strict",   summary: "Full refund 30+ days before check-in · 50% refund 14–30 days · No refund within 14 days." },
+              };
+              const p = policyMap[property.cancellationPolicy ?? "flexible"] ?? policyMap.flexible;
+              return (
+                <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 text-sm text-gray-700">
+                  <span className="mt-0.5">🛡️</span>
+                  <div>
+                    <strong>Cancellation: {p.name}</strong>
+                    <span className="text-gray-500 ml-1">— {p.summary}</span>
+                    <span className="block text-xs text-gray-400 mt-0.5">Free cancellation within 24 h of booking if check-in is 7+ days away.</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick stats */}
             <div className="flex flex-wrap gap-6 pb-8 border-b border-gray-100 mb-8">

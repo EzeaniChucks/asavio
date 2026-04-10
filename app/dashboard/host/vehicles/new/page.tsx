@@ -34,6 +34,7 @@ export default function NewVehiclePage() {
     location: "",
     checkInInstructions: "",
     cautionFee: "",
+    cancellationPolicy: "flexible",
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
@@ -94,6 +95,7 @@ export default function NewVehiclePage() {
       }
       if (form.checkInInstructions.trim()) fd.append("checkInInstructions", form.checkInInstructions.trim());
       if (form.cautionFee && Number(form.cautionFee) > 0) fd.append("cautionFee", form.cautionFee);
+      fd.append("cancellationPolicy", form.cancellationPolicy ?? "flexible");
       selectedFeatures.forEach((f) => fd.append("features[]", f));
       images.forEach((img) => fd.append("images", img));
 
@@ -342,6 +344,34 @@ export default function NewVehiclePage() {
               rows={4}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
             />
+          </div>
+
+          {/* Cancellation policy */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-1">Cancellation policy</h2>
+            <p className="text-xs text-gray-400 mb-3">Shown to guests on your listing and during checkout. All policies include a free 24-hour cancellation window for bookings made 7+ days in advance.</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { value: "flexible",  label: "Flexible",  summary: "Full refund up to 24 h before pickup." },
+                { value: "moderate",  label: "Moderate",  summary: "Full refund up to 5 days before pickup." },
+                { value: "firm",      label: "Firm",      summary: "Full refund 14+ days · 50% refund 7–14 days · No refund <7 days." },
+                { value: "strict",    label: "Strict",    summary: "Full refund 30+ days · 50% refund 14–30 days · No refund <14 days." },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set("cancellationPolicy", opt.value)}
+                  className={`text-left p-4 rounded-xl border-2 transition-colors ${
+                    form.cancellationPolicy === opt.value
+                      ? "border-black bg-gray-50"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  <p className="font-semibold text-sm text-gray-900">{opt.label}</p>
+                  <p className="text-xs text-gray-500 mt-1">{opt.summary}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           <button

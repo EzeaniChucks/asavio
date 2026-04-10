@@ -76,6 +76,7 @@ export interface PropertyFormData {
   nearbyPlaces: string[];
   amenities: string[];
   checkInInstructions: string;
+  cancellationPolicy: string;
   location: {
     address: string;
     city: string;
@@ -85,6 +86,29 @@ export interface PropertyFormData {
   };
   images: File[];
 }
+
+const CANCELLATION_POLICY_OPTIONS = [
+  {
+    value: "flexible",
+    label: "Flexible",
+    summary: "Full refund up to 24 h before check-in.",
+  },
+  {
+    value: "moderate",
+    label: "Moderate",
+    summary: "Full refund up to 5 days before check-in.",
+  },
+  {
+    value: "firm",
+    label: "Firm",
+    summary: "Full refund 14+ days · 50% refund 7–14 days · No refund <7 days.",
+  },
+  {
+    value: "strict",
+    label: "Strict",
+    summary: "Full refund 30+ days · 50% refund 14–30 days · No refund <14 days.",
+  },
+];
 
 interface PropertyFormProps {
   initialData?: Partial<PropertyFormData>;
@@ -114,6 +138,7 @@ export default function PropertyForm({
     nearbyPlaces: toStringArray((initialData as any)?.nearbyPlaces),
     amenities: toStringArray(initialData?.amenities),
     checkInInstructions: (initialData as any)?.checkInInstructions ?? "",
+    cancellationPolicy: (initialData as any)?.cancellationPolicy ?? "flexible",
     location: {
       address: initialData?.location?.address ?? "",
       city: initialData?.location?.city ?? "",
@@ -543,6 +568,36 @@ export default function PropertyForm({
           rows={5}
           className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
         />
+      </section>
+
+      {/* ── Cancellation policy ────────────────────────── */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Cancellation policy</h2>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Determines how much guests receive back if they cancel. Shown on your listing and during checkout.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {CANCELLATION_POLICY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => set("cancellationPolicy", opt.value)}
+              className={`text-left p-4 rounded-xl border-2 transition-colors ${
+                form.cancellationPolicy === opt.value
+                  ? "border-black bg-gray-50"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
+            >
+              <p className="font-semibold text-sm text-gray-900">{opt.label}</p>
+              <p className="text-xs text-gray-500 mt-1">{opt.summary}</p>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400">
+          All policies include a free 24-hour cancellation window for bookings made 7+ days before check-in.
+        </p>
       </section>
 
       {/* ── Submit ─────────────────────────────────────── */}

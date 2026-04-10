@@ -40,6 +40,7 @@ export default function NewPropertyPage() {
       if (data.nearbyPlaces?.length) formData.append("nearbyPlaces", JSON.stringify(data.nearbyPlaces));
       formData.append("amenities", JSON.stringify(data.amenities));
       if (data.checkInInstructions?.trim()) formData.append("checkInInstructions", data.checkInInstructions.trim());
+      formData.append("cancellationPolicy", data.cancellationPolicy ?? "flexible");
       formData.append("location", JSON.stringify(data.location));
       data.images.forEach((file) => formData.append("images", file));
 
