@@ -43,12 +43,48 @@ function SubscriptionContent() {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    // Show success toast if redirected from Paystack
-    if (searchParams.get("success") === "1") {
-      toast.success("Subscription activated! Welcome to your new plan.");
-      router.replace("/dashboard/host/subscription");
+    // Paystack redirects back with ?success=1&reference=SUB-xxx&trxref=SUB-xxx
+    if (searchParams.get("success") !== "1") return;
+
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+
+    // Clean the URL immediately so a page refresh doesn't re-trigger verification
+    router.replace("/dashboard/host/subscription");
+
+    if (!reference) {
+      // No reference — can only happen if Paystack behaviour changes; show generic message
+      toast.success("Payment received. Your subscription will activate shortly.");
+      return;
     }
-  }, [searchParams, router]);
+
+    // Verify with Paystack and activate if the webhook hasn't already fired
+    api
+      .post("/subscriptions/verify", { reference })
+      .then((res) => {
+        const { alreadyActive } = res.data.data;
+        toast.success(
+          alreadyActive
+            ? "Subscription already active — you're all set!"
+            : "Subscription activated! Welcome to your new plan."
+        );
+        // Refresh subscription state
+        return Promise.all([
+          api.get("/subscriptions/me"),
+          api.get("/subscriptions/tiers"),
+        ]);
+      })
+      .then((results) => {
+        if (!results) return;
+        const [meRes, tiersRes] = results;
+        setSubscription(meRes.data.data.subscription);
+        setCurrentTier(meRes.data.data.currentTier ?? "starter");
+        setTierConfig(tiersRes.data.data.tiers);
+      })
+      .catch(() => {
+        // api interceptor shows the error toast; nothing else to do
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -221,11 +257,11 @@ function SubscriptionContent() {
                 <ul className="space-y-2 text-sm mb-6 flex-1">
                   <li className="flex items-center gap-2 text-gray-600">
                     <FaCheck className="text-green-500 text-xs flex-shrink-0" />
-                    {cfg.maxProperties === Infinity ? "Unlimited" : `Up to ${cfg.maxProperties}`} property listings
+                    {cfg.maxProperties == null || cfg.maxProperties === Infinity ? "Unlimited" : `Up to ${cfg.maxProperties}`} property listings
                   </li>
                   <li className="flex items-center gap-2 text-gray-600">
                     <FaCheck className="text-green-500 text-xs flex-shrink-0" />
-                    {cfg.maxVehicles === Infinity ? "Unlimited" : `Up to ${cfg.maxVehicles}`} vehicle listings
+                    {cfg.maxVehicles == null || cfg.maxVehicles === Infinity ? "Unlimited" : `Up to ${cfg.maxVehicles}`} vehicle listings
                   </li>
                   <li className="flex items-center gap-2 text-gray-600">
                     <FaCheck className="text-green-500 text-xs flex-shrink-0" />
@@ -281,7 +317,7 @@ function SubscriptionContent() {
           })}
         </div>
 
-        {/* Feature comparison table */}
+        {/* Feature comparison table — all values come from the API tier config */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">Full feature comparison</h2>
@@ -296,15 +332,45 @@ function SubscriptionContent() {
               </tr>
             </thead>
             <tbody>
-              <FeatureRow label="Property listings" starter="3" pro="10" elite="Unlimited" />
-              <FeatureRow label="Vehicle listings" starter="2" pro="6" elite="Unlimited" />
-              <FeatureRow label="Photos per listing" starter="10" pro="15" elite="20" />
-              <FeatureRow label="Platform commission" starter="12%" pro="10%" elite="8%" />
-              <FeatureRow label="Feature video" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={true} />} elite={<CheckIcon yes={true} />} />
-              <FeatureRow label="Max video length" starter="—" pro="60 seconds" elite="90 seconds" />
-              <FeatureRow label="Max video size" starter="—" pro="50 MB" elite="100 MB" />
-              <FeatureRow label="Search boost" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={true} />} elite={<CheckIcon yes={true} />} />
-              <FeatureRow label="Homepage featured placement" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={false} />} elite={<CheckIcon yes={true} />} />
+              <FeatureRow
+                label="Property listings"
+                starter={String(tierConfig.starter.maxProperties)}
+                pro={String(tierConfig.pro.maxProperties ?? "Unlimited")}
+                elite={tierConfig.elite.maxProperties == null ? "Unlimited" : String(tierConfig.elite.maxProperties)}
+              />
+              <FeatureRow
+                label="Vehicle listings"
+                starter={String(tierConfig.starter.maxVehicles)}
+                pro={String(tierConfig.pro.maxVehicles ?? "Unlimited")}
+                elite={tierConfig.elite.maxVehicles == null ? "Unlimited" : String(tierConfig.elite.maxVehicles)}
+              />
+              <FeatureRow
+                label="Photos per listing"
+                starter={String(tierConfig.starter.maxPhotos)}
+                pro={String(tierConfig.pro.maxPhotos)}
+                elite={String(tierConfig.elite.maxPhotos)}
+              />
+              <FeatureRow
+                label="Platform commission"
+                starter={`${Math.round(tierConfig.starter.commissionRate * 100)}%`}
+                pro={`${Math.round(tierConfig.pro.commissionRate * 100)}%`}
+                elite={`${Math.round(tierConfig.elite.commissionRate * 100)}%`}
+              />
+              <FeatureRow label="Feature video" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={tierConfig.pro.featureVideo} />} elite={<CheckIcon yes={tierConfig.elite.featureVideo} />} />
+              <FeatureRow
+                label="Max video length"
+                starter="—"
+                pro={tierConfig.pro.videoMaxSeconds > 0 ? `${tierConfig.pro.videoMaxSeconds}s` : "—"}
+                elite={tierConfig.elite.videoMaxSeconds > 0 ? `${tierConfig.elite.videoMaxSeconds}s` : "—"}
+              />
+              <FeatureRow
+                label="Max video size"
+                starter="—"
+                pro={tierConfig.pro.videoMaxSizeMB > 0 ? `${tierConfig.pro.videoMaxSizeMB} MB` : "—"}
+                elite={tierConfig.elite.videoMaxSizeMB > 0 ? `${tierConfig.elite.videoMaxSizeMB} MB` : "—"}
+              />
+              <FeatureRow label="Search boost" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={tierConfig.pro.searchBoost > 0} />} elite={<CheckIcon yes={tierConfig.elite.searchBoost > 0} />} />
+              <FeatureRow label="Homepage featured placement" starter={<CheckIcon yes={false} />} pro={<CheckIcon yes={tierConfig.pro.homepageFeatured} />} elite={<CheckIcon yes={tierConfig.elite.homepageFeatured} />} />
               <FeatureRow label="Analytics dashboard" starter={<CheckIcon yes={true} />} pro={<CheckIcon yes={true} />} elite={<CheckIcon yes={true} />} />
             </tbody>
           </table>

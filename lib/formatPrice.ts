@@ -10,8 +10,8 @@
  * @example
  *   formatPrice(125000)           // "₦125,000"
  *   formatPrice(125000, "NGN")    // "₦125,000"
- *   formatPrice(99.99, "USD")     // "$100"
- *   formatPrice(85, "GBP")        // "£85"
+ *   formatPrice(99, "USD")         // "$99" (future multi-currency)
+ *   formatPrice(85, "GBP")        // "£85" (future multi-currency)
  */
 export function formatPrice(amount: number | string, currency = "NGN"): string {
   const n = Number(amount);

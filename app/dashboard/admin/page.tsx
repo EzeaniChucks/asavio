@@ -22,8 +22,8 @@ import {
   FaBullhorn,
   FaShieldAlt,
   FaClipboardList,
-  FaCreditCard,
   FaHeadset,
+  FaCrown,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -78,7 +78,7 @@ const ALL_NAV_LINKS = [
     tabLabel: "Bookings",
     icon: <FaCalendarAlt className="text-xl" />,
     label: "Bookings",
-    desc: "Track and update booking statuses",
+    desc: "Track booking statuses and verify Paystack payments",
     color: "bg-purple-50",
     iconColor: "text-purple-600",
   },
@@ -153,14 +153,14 @@ const ALL_NAV_LINKS = [
     iconColor: "text-teal-600",
   },
   {
-    href: "/dashboard/admin/payments",
-    permission: P.MANAGE_BOOKINGS,
-    tabLabel: "Payments",
-    icon: <FaCreditCard className="text-xl" />,
-    label: "Pending Payments",
-    desc: "Verify Paystack charges and resolve stuck bookings",
-    color: "bg-amber-50",
-    iconColor: "text-amber-600",
+    href: "/dashboard/admin/subscriptions",
+    permission: P.MANAGE_SUBSCRIPTIONS,
+    tabLabel: "Subscriptions",
+    icon: <FaCrown className="text-xl" />,
+    label: "Subscriptions",
+    desc: "View active subscribers, MRR, and force-cancel plans",
+    color: "bg-purple-50",
+    iconColor: "text-purple-600",
   },
   {
     href: "/dashboard/admin/support",
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
               <StatsCard
                 icon={<FaMoneyBillWave className="text-green-600" />}
                 label="Total Revenue"
-                value={`$${(stats?.totalRevenue ?? 0).toLocaleString()}`}
+                value={`₦${(stats?.totalRevenue ?? 0).toLocaleString("en-NG")}`}
                 sub="All time"
                 color="bg-green-50"
               />

@@ -21,7 +21,8 @@ const PERMISSIONS = [
   { key: "manage_settings",   label: "Platform Settings" },
   { key: "manage_kyc",        label: "KYC Review" },
   { key: "manage_admins",     label: "Admin Management (IAM)" },
-  { key: "view_audit_logs",   label: "View Audit Logs" },
+  { key: "view_audit_logs",       label: "View Audit Logs" },
+  { key: "manage_subscriptions",  label: "Subscriptions" },
 ];
 
 interface AdminUser {

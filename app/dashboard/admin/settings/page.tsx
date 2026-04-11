@@ -142,13 +142,13 @@ export default function AdminSettingsPage() {
                 <div className="bg-blue-50 rounded-xl px-5 py-4 mb-6 text-sm space-y-1">
                   <p className="font-medium text-blue-800 mb-2 flex items-center gap-1.5">
                     <FaInfoCircle className="text-blue-500" />
-                    Example: $1,000 booking
+                    Example: ₦100,000 booking
                   </p>
                   <p className="text-blue-700">
-                    Platform earns: <strong>${(1000 * currentRate / 100).toFixed(2)}</strong>
+                    Platform earns: <strong>₦{(100000 * currentRate / 100).toLocaleString("en-NG")}</strong>
                   </p>
                   <p className="text-blue-700">
-                    Host receives: <strong>${(1000 - 1000 * currentRate / 100).toFixed(2)}</strong>
+                    Host receives: <strong>₦{(100000 - 100000 * currentRate / 100).toLocaleString("en-NG")}</strong>
                   </p>
                 </div>
               )}

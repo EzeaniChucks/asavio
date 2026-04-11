@@ -529,7 +529,7 @@ export default function AdminUsersPage() {
               </div>
               {commissionInput.trim() !== "" && !isNaN(parseFloat(commissionInput)) && (
                 <p className="text-xs text-gray-500 mb-4">
-                  On a $1,000 booking: platform earns <strong>${(parseFloat(commissionInput) * 10).toFixed(2)}</strong>, host receives <strong>${(1000 - parseFloat(commissionInput) * 10).toFixed(2)}</strong>
+                  On a ₦100,000 booking: platform earns <strong>₦{(parseFloat(commissionInput) * 1000).toLocaleString("en-NG")}</strong>, host receives <strong>₦{(100000 - parseFloat(commissionInput) * 1000).toLocaleString("en-NG")}</strong>
                 </p>
               )}
               {commissionInput.trim() === "" && (
