@@ -43,7 +43,7 @@ export default function EditVehiclePage() {
     make: "",
     model: "",
     year: new Date().getFullYear(),
-    vehicleType: "sedan",
+    vehicleType: "",
     pricePerDay: "",
     priceWithDriverPerDay: "",
     description: "",
@@ -144,7 +144,7 @@ export default function EditVehiclePage() {
       const res = await api.post(`/vehicles/${id}/feature-video`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setVehicle((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.featureVideoUrl } : prev);
+      setVehicle((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.vehicle.featureVideoUrl } : prev);
       toast.success("Feature video uploaded");
     } catch {
       // interceptor handles error toast
@@ -338,7 +338,9 @@ export default function EditVehiclePage() {
                   value={form.vehicleType}
                   onChange={(e) => set("vehicleType", e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white capitalize"
+                  required
                 >
+                  <option value="" disabled>Select vehicle type</option>
                   {VEHICLE_TYPES.map((t) => (
                     <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                   ))}
@@ -604,6 +606,7 @@ export default function EditVehiclePage() {
                 <video
                   src={vehicle.featureVideoUrl}
                   controls
+                  playsInline
                   className="w-full max-h-64 rounded-xl bg-black object-contain"
                   preload="metadata"
                 />
@@ -618,9 +621,23 @@ export default function EditVehiclePage() {
                 </button>
               </div>
             ) : (
-              <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
-                <FaVideo className="text-gray-400" />
-                {videoUploading ? "Uploading…" : "Upload feature video (MP4 / MOV)"}
+              <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-8 transition-colors text-sm ${
+                videoUploading
+                  ? "border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400"
+                  : "border-gray-200 cursor-pointer hover:border-gray-400 text-gray-500"
+              }`}>
+                {videoUploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    <span>Uploading video — this may take a moment…</span>
+                  </>
+                ) : (
+                  <>
+                    <FaVideo className="text-gray-400 text-xl" />
+                    <span>Upload feature video</span>
+                    <span className="text-xs text-gray-400">MP4 or MOV · up to {subscriptionTier === "elite" ? "90s / 100MB" : "60s / 50MB"}</span>
+                  </>
+                )}
                 <input
                   ref={videoInputRef}
                   type="file"

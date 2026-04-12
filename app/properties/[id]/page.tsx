@@ -259,10 +259,14 @@ export default function PropertyDetailPage() {
         {/* Feature video */}
         {property.featureVideoUrl && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Feature video</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">Feature video</h2>
+              <span className="text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">From the host</span>
+            </div>
             <video
               src={property.featureVideoUrl}
               controls
+              playsInline
               className="w-full max-h-[480px] rounded-2xl bg-black object-contain"
               preload="metadata"
             />

@@ -86,7 +86,7 @@ export default function EditPropertyPage() {
       const res = await api.post(`/properties/${id}/feature-video`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setProperty((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.featureVideoUrl } : prev);
+      setProperty((prev) => prev ? { ...prev, featureVideoUrl: res.data.data.property.featureVideoUrl } : prev);
       toast.success("Feature video uploaded");
     } catch {
       // interceptor handles error toast
@@ -286,6 +286,7 @@ export default function EditPropertyPage() {
                 <video
                   src={property.featureVideoUrl}
                   controls
+                  playsInline
                   className="w-full max-h-64 rounded-xl bg-black object-contain"
                   preload="metadata"
                 />
@@ -300,20 +301,32 @@ export default function EditPropertyPage() {
                 </button>
               </div>
             ) : (
-              <>
-                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors text-gray-500 text-sm">
-                  <FaVideo className="text-gray-400" />
-                  {videoUploading ? "Uploading…" : "Upload feature video (MP4 / MOV)"}
-                  <input
-                    ref={videoInputRef}
-                    type="file"
-                    accept="video/mp4,video/quicktime,video/x-m4v"
-                    className="hidden"
-                    disabled={videoUploading}
-                    onChange={handleVideoUpload}
-                  />
-                </label>
-              </>
+              <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-8 transition-colors text-sm ${
+                videoUploading
+                  ? "border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400"
+                  : "border-gray-200 cursor-pointer hover:border-gray-400 text-gray-500"
+              }`}>
+                {videoUploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    <span>Uploading video — this may take a moment…</span>
+                  </>
+                ) : (
+                  <>
+                    <FaVideo className="text-gray-400 text-xl" />
+                    <span>Upload feature video</span>
+                    <span className="text-xs text-gray-400">MP4 or MOV · up to {subscriptionTier === "elite" ? "90s / 100MB" : "60s / 50MB"}</span>
+                  </>
+                )}
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/x-m4v"
+                  className="hidden"
+                  disabled={videoUploading}
+                  onChange={handleVideoUpload}
+                />
+              </label>
             )}
           </TierGate>
         </div>

@@ -20,14 +20,20 @@ function toStringArray(val: unknown): string[] {
 }
 
 const PROPERTY_TYPES = [
-  "Apartment",
-  "Villa",
-  "Beach House",
-  "Penthouse",
-  "Studio",
-  "Cabin",
   "Entire Home",
+  "Apartment",
+  "Duplex",
+  "Penthouse",
+  "Villa",
+  "Studio",
   "Townhouse",
+  "Bungalow",
+  "Loft",
+  "Serviced Apartment",
+  "Guest House",
+  "Beach House",
+  "Cabin",
+  "Chalet",
 ];
 
 const PURPOSE_OPTIONS = [
@@ -128,7 +134,7 @@ export default function PropertyForm({
   const [form, setForm] = useState<PropertyFormData>({
     title: initialData?.title ?? "",
     description: initialData?.description ?? "",
-    propertyType: initialData?.propertyType ?? PROPERTY_TYPES[0],
+    propertyType: initialData?.propertyType ?? "",
     bedrooms: initialData?.bedrooms ?? 1,
     bathrooms: initialData?.bathrooms ?? 1,
     maxGuests: initialData?.maxGuests ?? 2,
@@ -229,7 +235,9 @@ export default function PropertyForm({
               value={form.propertyType}
               onChange={(e) => set("propertyType", e.target.value)}
               className={fieldClass}
+              required
             >
+              <option value="" disabled>Select property type</option>
               {PROPERTY_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}

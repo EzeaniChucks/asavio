@@ -69,12 +69,18 @@ export default function AdminPropertiesPage() {
       const params: Record<string, string | number | boolean> = { page, limit: LIMIT };
       if (search.trim()) params.search = search.trim();
       if (statusFilter === "archived") {
+        // Archived = approved but taken offline
+        params.status = "approved";
         params.isAvailable = false;
-      } else {
-        // All other tabs exclude archived (hidden) listings
+      } else if (statusFilter === "approved") {
+        // Approved = live listings only
+        params.status = "approved";
         params.isAvailable = true;
-        if (statusFilter !== "all") params.status = statusFilter;
+      } else if (statusFilter === "pending" || statusFilter === "rejected") {
+        // Pending/rejected — filter by status only; isAvailable is irrelevant here
+        params.status = statusFilter;
       }
+      // "all" — no filters, return everything
       const res = await api.get("/admin/properties", { params });
       const data = res.data.data ?? res.data;
       setProperties(data.properties ?? data);

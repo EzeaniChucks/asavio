@@ -25,7 +25,7 @@ export default function NewVehiclePage() {
     make: "",
     model: "",
     year: new Date().getFullYear(),
-    vehicleType: "sedan",
+    vehicleType: "",
     pricePerDay: "",
     priceWithDriverPerDay: "",
     description: "",
@@ -242,7 +242,9 @@ export default function NewVehiclePage() {
                   value={form.vehicleType}
                   onChange={(e) => set("vehicleType", e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white capitalize"
+                  required
                 >
+                  <option value="" disabled>Select vehicle type</option>
                   {VEHICLE_TYPES.map((t) => (
                     <option key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                   ))}
