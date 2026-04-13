@@ -12,7 +12,9 @@ import "react-date-range/dist/theme/default.css";
 import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaCalendarAlt } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Property } from "@/types";
+import { formatPrice } from "@/lib/formatPrice";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface BookingWidgetProps {
   property: Property;
@@ -50,6 +52,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -199,17 +202,39 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
       className="border border-gray-200 rounded-2xl p-6 shadow-lg bg-white"
     >
       {/* Price */}
-      <div className="flex items-baseline gap-1 mb-5">
+      <div className="mb-5">
         {hasPurposePricing && purpose && property.purposePricing?.[purpose] ? (
           <>
-            <span className="text-2xl font-bold">₦{Number(property.purposePricing[purpose]).toLocaleString()}</span>
-            <span className="text-gray-500">/ night</span>
-            <span className="ml-2 text-xs text-gray-400 line-through">₦{Number(property.pricePerNight).toLocaleString()}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold">
+                {showUsd && toUsd(property.purposePricing[purpose])
+                  ? toUsd(property.purposePricing[purpose])
+                  : formatPrice(property.purposePricing[purpose])}
+              </span>
+              <span className="text-gray-500">/ night</span>
+              <span className="ml-2 text-xs text-gray-400 line-through">
+                {showUsd && toUsd(property.pricePerNight) ? toUsd(property.pricePerNight) : formatPrice(property.pricePerNight)}
+              </span>
+            </div>
+            {toUsd(property.purposePricing[purpose]) && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                {showUsd ? formatPrice(property.purposePricing[purpose]) : toUsd(property.purposePricing[purpose])}
+              </p>
+            )}
           </>
         ) : (
           <>
-            <span className="text-2xl font-bold">₦{Number(property.pricePerNight).toLocaleString()}</span>
-            <span className="text-gray-500">/ night</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold">
+                {showUsd && toUsd(property.pricePerNight) ? toUsd(property.pricePerNight) : formatPrice(property.pricePerNight)}
+              </span>
+              <span className="text-gray-500">/ night</span>
+            </div>
+            {toUsd(property.pricePerNight) && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                {showUsd ? formatPrice(property.pricePerNight) : toUsd(property.pricePerNight)}
+              </p>
+            )}
           </>
         )}
       </div>
@@ -228,7 +253,14 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
         <div className="flex gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-xs text-blue-800">
           <span className="shrink-0">🔒</span>
           <p>
-            <strong>Caution fee: ₦{Number(property.cautionFee).toLocaleString("en-NG")}</strong> — refundable deposit collected by the host on arrival. Not charged through Asavio.
+            <strong>
+            Caution fee: {showUsd && toUsd(property.cautionFee!) ? toUsd(property.cautionFee!) : formatPrice(property.cautionFee!)}
+            {toUsd(property.cautionFee!) && (
+              <span className="font-normal text-blue-600/80 ml-1">
+                ({showUsd ? formatPrice(property.cautionFee!) : toUsd(property.cautionFee!)})
+              </span>
+            )}
+          </strong> — refundable deposit collected by the host on arrival. Not charged through Asavio.
           </p>
         </div>
       )}
@@ -342,7 +374,7 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
             <option value="">Regular stay (base price)</option>
             {validPurposeEntries.map(([p, price]) => (
               <option key={p} value={p}>
-                {p} — ₦{Number(price).toLocaleString()}/night
+                {p} — {showUsd && toUsd(price) ? toUsd(price) : formatPrice(price)}/night
               </option>
             ))}
           </select>
@@ -416,14 +448,21 @@ export default function BookingWidget({ property }: BookingWidgetProps) {
           )}
           <div className="flex justify-between text-gray-600">
             <span>
-              ₦{Number(availability.pricePerNight).toLocaleString()} × {nights}{" "}
+              {showUsd && toUsd(availability.pricePerNight) ? toUsd(availability.pricePerNight) : formatPrice(availability.pricePerNight)} × {nights}{" "}
               {nights === 1 ? "night" : "nights"}
             </span>
-            <span>₦{availability.totalPrice.toLocaleString()}</span>
+            <span>{showUsd && toUsd(availability.totalPrice) ? toUsd(availability.totalPrice) : formatPrice(availability.totalPrice)}</span>
           </div>
           <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
             <span>Total</span>
-            <span>₦{availability.totalPrice.toLocaleString()}</span>
+            <div className="text-right">
+              <span>{showUsd && toUsd(availability.totalPrice) ? toUsd(availability.totalPrice) : formatPrice(availability.totalPrice)}</span>
+              {toUsd(availability.totalPrice) && (
+                <p className="text-xs text-gray-400 font-normal">
+                  {showUsd ? formatPrice(availability.totalPrice) : toUsd(availability.totalPrice)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

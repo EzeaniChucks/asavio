@@ -20,7 +20,9 @@ import {
 } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { Booking } from "@/types";
+import { formatPrice } from "@/lib/formatPrice";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/context/CurrencyContext";
 import toast from "react-hot-toast";
 
 const POLICY_DETAILS: Record<string, { name: string; summary: string }> = {
@@ -85,6 +87,7 @@ export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,7 +150,7 @@ export default function BookingDetailPage() {
       setShowCancelModal(false);
       toast.success(
         estimate && estimate.refundAmount > 0
-          ? `Booking cancelled — ₦${Number(estimate.refundAmount).toLocaleString("en-NG")} refund is being processed`
+          ? `Booking cancelled — ${formatPrice(estimate.refundAmount)} refund is being processed`
           : "Booking cancelled"
       );
     } catch {
@@ -317,15 +320,25 @@ export default function BookingDetailPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
               <span>
-                ₦{booking.vehicle
-                  ? Number(booking.vehicle.pricePerDay).toLocaleString()
-                  : Number(booking.property?.pricePerNight).toLocaleString()} × {nights} {booking.vehicle ? "days" : "nights"}
+                {(() => {
+                  const rate = booking.vehicle
+                    ? Number(booking.vehicle.pricePerDay)
+                    : Number(booking.property?.pricePerNight);
+                  return showUsd && toUsd(rate) ? toUsd(rate) : formatPrice(rate);
+                })()} × {nights} {booking.vehicle ? "days" : "nights"}
               </span>
-              <span>₦{Number(booking.totalPrice).toLocaleString()}</span>
+              <span>{showUsd && toUsd(booking.totalPrice) ? toUsd(booking.totalPrice) : formatPrice(booking.totalPrice)}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-3">
               <span>Total charged</span>
-              <span>₦{Number(booking.totalPrice).toLocaleString()}</span>
+              <div className="text-right">
+                <span>{showUsd && toUsd(booking.totalPrice) ? toUsd(booking.totalPrice) : formatPrice(booking.totalPrice)}</span>
+                {toUsd(booking.totalPrice) && (
+                  <p className="text-xs text-gray-400 font-normal">
+                    {showUsd ? formatPrice(booking.totalPrice) : toUsd(booking.totalPrice)}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Host / admin view: commission breakdown */}
@@ -333,11 +346,11 @@ export default function BookingDetailPage() {
               <>
                 <div className="flex justify-between text-gray-500 border-t border-gray-100 pt-3">
                   <span>Platform commission</span>
-                  <span>− ₦{Number(booking.platformCommission).toLocaleString()}</span>
+                  <span>− {formatPrice(booking.platformCommission)}</span>
                 </div>
                 <div className="flex justify-between font-medium text-gray-800">
                   <span>Host payout</span>
-                  <span>₦{Number(booking.hostPayout).toLocaleString()}</span>
+                  <span>{formatPrice(booking.hostPayout)}</span>
                 </div>
                 <div className="flex justify-between text-gray-500">
                   <span>Payout status</span>
@@ -381,7 +394,14 @@ export default function BookingDetailPage() {
             {booking.status === "cancelled" && booking.refundedAmount != null && Number(booking.refundedAmount) > 0 && (
               <div className="flex justify-between text-sm text-blue-700 font-medium border-t border-blue-100 pt-3">
                 <span>Refund issued</span>
-                <span>₦{Number(booking.refundedAmount).toLocaleString()}</span>
+                <div className="text-right">
+                  <span>{showUsd && toUsd(booking.refundedAmount!) ? toUsd(booking.refundedAmount!) : formatPrice(booking.refundedAmount!)}</span>
+                  {toUsd(booking.refundedAmount!) && (
+                    <p className="text-xs text-blue-500/70 font-normal">
+                      {showUsd ? formatPrice(booking.refundedAmount!) : toUsd(booking.refundedAmount!)}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
             {booking.status === "cancelled" && (booking.refundedAmount == null || Number(booking.refundedAmount) === 0) && booking.paymentStatus === "paid" && (

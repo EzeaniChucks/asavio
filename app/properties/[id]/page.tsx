@@ -22,6 +22,8 @@ import {
 import { api } from "@/lib/api";
 import { Property, Review } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
+import { formatPrice } from "@/lib/formatPrice";
+import { useCurrency } from "@/context/CurrencyContext";
 import BookingWidget from "@/components/booking/BookingWidget";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
@@ -74,6 +76,7 @@ export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -317,7 +320,14 @@ export default function PropertyDetailPage() {
               <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
                 <span>🔒</span>
                 <p>
-                  <strong>Caution fee: ₦{Number(property.cautionFee).toLocaleString("en-NG")}</strong>
+                  <strong>
+                    Caution fee: {showUsd && toUsd(property.cautionFee!) ? toUsd(property.cautionFee!) : formatPrice(property.cautionFee!)}
+                    {toUsd(property.cautionFee!) && (
+                      <span className="font-normal text-blue-500 ml-1">
+                        ({showUsd ? formatPrice(property.cautionFee!) : toUsd(property.cautionFee!)})
+                      </span>
+                    )}
+                  </strong>
                   <span className="text-blue-600 ml-1">— refundable deposit collected by the host on arrival</span>
                 </p>
               </div>

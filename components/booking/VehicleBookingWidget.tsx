@@ -17,7 +17,9 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import { api } from "@/lib/api";
+import { formatPrice } from "@/lib/formatPrice";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface Vehicle {
   id: string;
@@ -71,6 +73,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -224,15 +227,24 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
       className="border border-gray-200 rounded-2xl p-6 shadow-lg bg-white"
     >
       {/* Price */}
-      <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-2xl font-bold">₦{Number(vehicle.pricePerDay).toLocaleString()}</span>
-        <span className="text-gray-500">/ day</span>
+      <div className="mb-4">
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl font-bold">
+            {showUsd && toUsd(vehicle.pricePerDay) ? toUsd(vehicle.pricePerDay) : formatPrice(vehicle.pricePerDay)}
+          </span>
+          <span className="text-gray-500">/ day</span>
+        </div>
+        {toUsd(vehicle.pricePerDay) && (
+          <p className="text-xs text-gray-400 mt-0.5">
+            {showUsd ? formatPrice(vehicle.pricePerDay) : toUsd(vehicle.pricePerDay)}
+          </p>
+        )}
+        {hasDriverOption && (
+          <p className="text-xs text-gray-400 mt-1">
+            With driver: {showUsd && toUsd(vehicle.priceWithDriverPerDay!) ? toUsd(vehicle.priceWithDriverPerDay!) : formatPrice(vehicle.priceWithDriverPerDay!)} / day
+          </p>
+        )}
       </div>
-      {hasDriverOption && (
-        <p className="text-xs text-gray-400 mb-4">
-          With driver: ₦{Number(vehicle.priceWithDriverPerDay).toLocaleString()} / day
-        </p>
-      )}
 
       {/* Platform-only warning */}
       <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800">
@@ -330,7 +342,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
               <div className="text-left">
                 <p className="text-sm font-medium text-gray-800">Add a driver</p>
                 <p className="text-xs text-gray-400">
-                  +₦{(Number(vehicle.priceWithDriverPerDay) - Number(vehicle.pricePerDay)).toLocaleString()} / day
+                  +{(() => { const d = Number(vehicle.priceWithDriverPerDay) - Number(vehicle.pricePerDay); return showUsd && toUsd(d) ? toUsd(d) : formatPrice(d); })()} / day
                 </p>
               </div>
             </div>
@@ -377,7 +389,7 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
               Interstate
               {vehicle.interstateSurchargePerDay != null && Number(vehicle.interstateSurchargePerDay) > 0 && (
                 <span className="text-xs opacity-70 ml-1">
-                  +₦{Number(vehicle.interstateSurchargePerDay).toLocaleString()}/day
+                  +{showUsd && toUsd(vehicle.interstateSurchargePerDay!) ? toUsd(vehicle.interstateSurchargePerDay!) : formatPrice(vehicle.interstateSurchargePerDay!)}/day
                 </span>
               )}
             </button>
@@ -470,19 +482,28 @@ export default function VehicleBookingWidget({ vehicle }: VehicleBookingWidgetPr
           ) : null}
           <div className="flex justify-between text-gray-600">
             <span>
-              ₦{Number(activeRate).toLocaleString()} × {days}{" "}
+              {showUsd && toUsd(activeRate) ? toUsd(activeRate) : formatPrice(activeRate)} × {days}{" "}
               {days === 1 ? "day" : "days"}
             </span>
-            <span>₦{availability.totalPrice.toLocaleString()}</span>
+            <span>{showUsd && toUsd(availability.totalPrice) ? toUsd(availability.totalPrice) : formatPrice(availability.totalPrice)}</span>
           </div>
           {surcharge > 0 && (
             <div className="flex justify-between text-gray-400 text-xs">
-              <span>Incl. interstate surcharge (₦{surcharge.toLocaleString()} × {days} days)</span>
+              <span>
+                Incl. interstate surcharge ({showUsd && toUsd(surcharge) ? toUsd(surcharge) : formatPrice(surcharge)} × {days} days)
+              </span>
             </div>
           )}
           <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
             <span>Total</span>
-            <span>₦{availability.totalPrice.toLocaleString()}</span>
+            <div className="text-right">
+              <span>{showUsd && toUsd(availability.totalPrice) ? toUsd(availability.totalPrice) : formatPrice(availability.totalPrice)}</span>
+              {toUsd(availability.totalPrice) && (
+                <p className="text-xs text-gray-400 font-normal">
+                  {showUsd ? formatPrice(availability.totalPrice) : toUsd(availability.totalPrice)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

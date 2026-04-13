@@ -22,6 +22,7 @@ import { api } from "@/lib/api";
 import { Vehicle, Review } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice } from "@/lib/formatPrice";
+import { useCurrency } from "@/context/CurrencyContext";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import GalleryLightbox from "@/components/ui/GalleryLightbox";
@@ -54,6 +55,7 @@ export default function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,7 +274,14 @@ export default function VehicleDetailPage() {
               <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 text-sm text-blue-800">
                 <span>🔒</span>
                 <p>
-                  <strong>Caution fee: ₦{Number(vehicle.cautionFee).toLocaleString("en-NG")}</strong>
+                  <strong>
+                    Caution fee: {showUsd && toUsd(vehicle.cautionFee!) ? toUsd(vehicle.cautionFee!) : formatPrice(vehicle.cautionFee!)}
+                    {toUsd(vehicle.cautionFee!) && (
+                      <span className="font-normal text-blue-500 ml-1">
+                        ({showUsd ? formatPrice(vehicle.cautionFee!) : toUsd(vehicle.cautionFee!)})
+                      </span>
+                    )}
+                  </strong>
                   <span className="text-blue-600 ml-1">— refundable deposit collected by the host on pickup</span>
                 </p>
               </div>
@@ -288,7 +297,7 @@ export default function VehicleDetailPage() {
                     <span className="text-gray-500 ml-1">
                       — Interstate travel allowed
                       {vehicle.interstateSurchargePerDay != null && Number(vehicle.interstateSurchargePerDay) > 0
-                        ? ` (+₦${Number(vehicle.interstateSurchargePerDay).toLocaleString("en-NG")}/day surcharge)`
+                        ? ` (+${showUsd && toUsd(vehicle.interstateSurchargePerDay) ? toUsd(vehicle.interstateSurchargePerDay) : formatPrice(vehicle.interstateSurchargePerDay)}/day surcharge)`
                         : ""}
                     </span>
                   ) : (

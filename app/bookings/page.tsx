@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import toast from "react-hot-toast";
 import { formatPrice } from "@/lib/formatPrice";
+import { useCurrency } from "@/context/CurrencyContext";
 
 type Tab = "all" | "awaiting_payment" | "confirmed" | "completed" | "cancelled";
 
@@ -42,6 +43,7 @@ function nightCount(checkIn: string, checkOut: string) {
 export default function BookingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showUsd, toUsd } = useCurrency();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -224,9 +226,16 @@ export default function BookingsPage() {
                         </span>
                       </div>
 
-                      <p className="text-sm font-semibold text-gray-900 mt-1.5">
-                        Total: {formatPrice(booking.totalPrice, (booking as any).currency)}
-                      </p>
+                      <div className="mt-1.5">
+                        <p className="text-sm font-semibold text-gray-900">
+                          Total: {showUsd && toUsd(booking.totalPrice) ? toUsd(booking.totalPrice) : formatPrice(booking.totalPrice, (booking as any).currency)}
+                        </p>
+                        {toUsd(booking.totalPrice) && (
+                          <p className="text-xs text-gray-400">
+                            {showUsd ? formatPrice(booking.totalPrice, (booking as any).currency) : toUsd(booking.totalPrice)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
