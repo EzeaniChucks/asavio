@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             Asavio ("we", "us", or "our") is committed to protecting your
             personal information. This Privacy Policy explains how we collect,
             use, disclose, and safeguard your data when you use our platform at
-            asavio.com and our mobile applications.
+            asavio.app and our mobile applications.
           </p>
 
           <h2>1. Information We Collect</h2>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
             We retain your personal data for as long as your account is active
             or as needed to provide services. You may request deletion of your
             account and associated data at any time by contacting us at
-            privacy@asavio.com. Note that we may retain certain data to comply
+            privacy@asavio.app. Note that we may retain certain data to comply
             with legal obligations or resolve disputes.
           </p>
 
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
             <li>Data portability.</li>
           </ul>
           <p>
-            To exercise any of these rights, contact us at privacy@asavio.com.
+            To exercise any of these rights, contact us at privacy@asavio.app.
           </p>
 
           <h2>6. Cookies</h2>
@@ -148,8 +148,8 @@ export default function PrivacyPage() {
             For questions about this Privacy Policy or to exercise your rights,
             contact us at:
             <br />
-            <a href="mailto:privacy@asavio.com" className="text-black underline">
-              privacy@asavio.com
+            <a href="mailto:privacy@asavio.app" className="text-black underline">
+              privacy@asavio.app
             </a>
           </p>
         </div>

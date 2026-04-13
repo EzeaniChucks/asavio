@@ -353,6 +353,7 @@ export default function EditVehiclePage() {
                   onChange={(e) => set("location", e.target.value)}
                   placeholder="e.g. Victoria Island, Lagos"
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  title="Include your city name, e.g. 'Victoria Island, Lagos' or 'Wuse 2, Abuja'"
                 />
               </div>
             </div>

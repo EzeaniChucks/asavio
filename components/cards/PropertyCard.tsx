@@ -8,6 +8,7 @@ import { FaStar, FaUsers, FaBed, FaBath } from "react-icons/fa";
 import { Property } from "@/types";
 import { formatPrice } from "@/lib/formatPrice";
 import HostTierBadge from "@/components/ui/HostTierBadge";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface PropertyCardProps {
   property: Property;
@@ -16,6 +17,8 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property, index }: PropertyCardProps) {
   const image = property.images?.[0]?.url;
+  const { showUsd, toUsd } = useCurrency();
+  const usdEstimate = toUsd(property.pricePerNight);
 
   return (
     <motion.div
@@ -101,8 +104,15 @@ export default function PropertyCard({ property, index }: PropertyCardProps) {
           {/* Price row */}
           <div className="flex items-baseline justify-between pt-3 border-t border-gray-100">
             <div>
-              <span className="font-bold text-gray-900 text-base">{formatPrice(property.pricePerNight)}</span>
+              <span className="font-bold text-gray-900 text-base">
+                {showUsd && usdEstimate ? usdEstimate : formatPrice(property.pricePerNight)}
+              </span>
               <span className="text-gray-400 text-xs ml-1">/ night</span>
+              {usdEstimate && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {showUsd ? formatPrice(property.pricePerNight) : usdEstimate}
+                </p>
+              )}
             </div>
             {property.totalReviews > 0 && (
               <span className="text-xs text-gray-400">

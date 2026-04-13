@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.asavio.com/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://api.asavio.app/api";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -80,7 +80,7 @@ export default async function PropertyDetailLayout({
         name: p.title,
         description: p.description,
         image: p.images?.map((img: { url: string }) => img.url) ?? [],
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.com"}/properties/${id}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.app"}/properties/${id}`,
         address: {
           "@type": "PostalAddress",
           addressLocality: p.location?.city ?? "",

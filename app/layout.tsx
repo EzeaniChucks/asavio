@@ -12,7 +12,7 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | Asavio",
   },
   description:
-    "Asavio is Nigeria's premier platform for luxury shortlet apartments and premium car rentals. Book verified, curated properties and vehicles in Lagos, Abuja, Port Harcourt and beyond.",
+    "Book luxury shortlet apartments and premium car rentals across Nigeria. Verified, curated listings in Lagos, Abuja, Port Harcourt and beyond.",
   keywords: [
     "luxury shortlet Nigeria",
     "luxury apartments Lagos",
@@ -74,9 +74,6 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
     creator: "@asavio",
     site: "@asavio",
-  },
-  alternates: {
-    canonical: BASE_URL,
   },
   verification: {
     // Add Google Search Console verification token here when available

@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { FaStar, FaUsers } from "react-icons/fa";
 import { Vehicle } from "@/types";
 import { formatPrice } from "@/lib/formatPrice";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -26,6 +27,9 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function VehicleCard({ vehicle, index = 0 }: VehicleCardProps) {
   const image = vehicle.images?.[0]?.url;
+  const { showUsd, toUsd } = useCurrency();
+  const usdDay = toUsd(vehicle.pricePerDay);
+  const usdDriver = vehicle.priceWithDriverPerDay ? toUsd(vehicle.priceWithDriverPerDay) : null;
 
   return (
     <motion.div
@@ -106,18 +110,32 @@ export default function VehicleCard({ vehicle, index = 0 }: VehicleCardProps) {
               {vehicle.priceWithDriverPerDay ? (
                 <div className="space-y-0.5">
                   <div>
-                    <span className="font-bold text-gray-900 text-base">{formatPrice(vehicle.pricePerDay)}</span>
+                    <span className="font-bold text-gray-900 text-base">
+                      {showUsd && usdDay ? usdDay : formatPrice(vehicle.pricePerDay)}
+                    </span>
                     <span className="text-gray-400 text-xs ml-1">self-drive</span>
+                    {usdDay && <span className="text-xs text-gray-400 ml-1">
+                      ({showUsd ? formatPrice(vehicle.pricePerDay) : usdDay})
+                    </span>}
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700 text-sm">{formatPrice(vehicle.priceWithDriverPerDay!)}</span>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      {showUsd && usdDriver ? usdDriver : formatPrice(vehicle.priceWithDriverPerDay!)}
+                    </span>
                     <span className="text-gray-400 text-xs ml-1">with driver</span>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <span className="font-bold text-gray-900 text-base">{formatPrice(vehicle.pricePerDay)}</span>
+                  <span className="font-bold text-gray-900 text-base">
+                    {showUsd && usdDay ? usdDay : formatPrice(vehicle.pricePerDay)}
+                  </span>
                   <span className="text-gray-400 text-xs ml-1">/ day</span>
+                  {usdDay && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {showUsd ? formatPrice(vehicle.pricePerDay) : usdDay}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

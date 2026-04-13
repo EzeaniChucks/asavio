@@ -127,8 +127,43 @@ export default function PropertyDetailPage() {
     ? property.images
     : [{ url: "/images/placeholder.jpg", publicId: "", id: "", isPrimary: true }];
 
+  const amenities = toStringArray(property.amenities);
+
+  const lodgingSchema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: property.title,
+    description: property.description,
+    image: property.images?.map((img) => img.url) ?? [],
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: property.location.address,
+      addressLocality: property.location.city,
+      addressRegion: property.location.state,
+      addressCountry: "NG",
+    },
+    priceRange: `₦${Number(property.pricePerNight).toLocaleString("en-NG")}/night`,
+    ...(property.totalReviews > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: Number(property.averageRating).toFixed(1),
+        reviewCount: String(property.totalReviews),
+      },
+    }),
+    numberOfRooms: property.bedrooms,
+    amenityFeature: amenities.map((a) => ({
+      "@type": "LocationFeatureSpecification",
+      name: a,
+      value: true,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(lodgingSchema) }}
+      />
       <div className="container py-6">
         {/* Back nav */}
         <button

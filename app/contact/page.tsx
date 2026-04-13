@@ -7,9 +7,9 @@ const channels = [
   {
     icon: "✉️",
     title: "Email",
-    detail: "hello@asavio.com",
+    detail: "hello@asavio.app",
     desc: "We reply within 24 hours.",
-    href: "mailto:hello@asavio.com",
+    href: "mailto:hello@asavio.app",
   },
   {
     icon: "💬",

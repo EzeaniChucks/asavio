@@ -4,6 +4,7 @@
 import { useState } from "react";
 import ImageUpload from "./ImageUpload";
 import { FaPlus, FaTimes } from "react-icons/fa";
+import { NIGERIAN_CITIES, getCityByName } from "@/lib/cities";
 
 function toStringArray(val: unknown): string[] {
   if (!val) return [];
@@ -310,14 +311,22 @@ export default function PropertyForm({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <label className={labelClass}>City</label>
-              <input
-                type="text"
+              <select
                 value={form.location.city}
-                onChange={(e) => setLocation("city", e.target.value)}
-                placeholder="Lagos"
+                onChange={(e) => {
+                  const city = e.target.value;
+                  setLocation("city", city);
+                  const def = getCityByName(city);
+                  if (def && !form.location.state) setLocation("state", def.state);
+                }}
                 required
                 className={fieldClass}
-              />
+              >
+                <option value="" disabled>Select city</option>
+                {NIGERIAN_CITIES.map((c) => (
+                  <option key={c.slug} value={c.name}>{c.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className={labelClass}>State / Province</label>
@@ -325,7 +334,7 @@ export default function PropertyForm({
                 type="text"
                 value={form.location.state}
                 onChange={(e) => setLocation("state", e.target.value)}
-                placeholder="Lagos State"
+                placeholder="e.g. Lagos"
                 className={fieldClass}
               />
             </div>

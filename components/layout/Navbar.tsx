@@ -6,9 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { FaBars, FaTimes, FaUser, FaChevronDown, FaComments } from "react-icons/fa";
+import { FaBars, FaTimes, FaChevronDown, FaComments } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationBell from "@/components/ui/NotificationBell";
+import CurrencyToggle from "@/components/ui/CurrencyToggle";
 
 const navLinks = [
   { href: "/properties", label: "Properties" },
@@ -71,6 +72,7 @@ export default function Navbar() {
 
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
+            <CurrencyToggle textColor={textColor} />
             {isAuthenticated && user ? (
               <>
                 {/* Messages icon */}
@@ -211,6 +213,7 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              <CurrencyToggle textColor="text-gray-700" />
               <hr className="border-gray-100" />
               {isAuthenticated && user ? (
                 <>

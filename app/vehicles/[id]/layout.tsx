@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.asavio.com/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://asavio-server.onrender.com/api";
 
 interface Props {
   params: Promise<{ id: string }>;

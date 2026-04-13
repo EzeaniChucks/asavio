@@ -96,10 +96,10 @@ export default function CareersPage() {
           <p className="text-gray-500 mb-10">
             Don't see a perfect fit? Email us at{" "}
             <a
-              href="mailto:careers@asavio.com"
+              href="mailto:careers@asavio.app"
               className="text-black underline"
             >
-              careers@asavio.com
+              careers@asavio.app
             </a>
           </p>
           <div className="space-y-3">
@@ -117,7 +117,7 @@ export default function CareersPage() {
                   </div>
                 </div>
                 <a
-                  href={`mailto:careers@asavio.com?subject=Application: ${role.title}`}
+                  href={`mailto:careers@asavio.app?subject=Application: ${role.title}`}
                   className="inline-flex items-center gap-2 bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors whitespace-nowrap"
                 >
                   Apply Now

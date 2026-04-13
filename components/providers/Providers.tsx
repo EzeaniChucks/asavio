@@ -3,6 +3,7 @@
 // components/providers/Providers.tsx
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/AuthContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 import { useSocket } from "@/hooks/useSocket";
 
 function SocketKeepAlive() {
@@ -13,6 +14,7 @@ function SocketKeepAlive() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
+      <CurrencyProvider>
       <SocketKeepAlive />
       {children}
       <Toaster
@@ -32,6 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           },
         }}
       />
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

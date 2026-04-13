@@ -47,10 +47,10 @@ export default function PressPage() {
         <p className="text-gray-400 text-lg max-w-xl mx-auto">
           For media enquiries, please reach out to{" "}
           <a
-            href="mailto:press@asavio.com"
+            href="mailto:press@asavio.app"
             className="text-secondary hover:underline"
           >
-            press@asavio.com
+            press@asavio.app
           </a>
         </p>
       </section>
@@ -97,7 +97,7 @@ export default function PressPage() {
               use. Please read our brand guidelines before publishing.
             </p>
             <a
-              href="mailto:press@asavio.com?subject=Media Kit Request"
+              href="mailto:press@asavio.app?subject=Media Kit Request"
               className="inline-flex items-center gap-2 bg-black text-white font-semibold px-6 py-3 rounded-full hover:bg-gray-800 transition-colors"
             >
               Request Media Kit
@@ -126,10 +126,10 @@ export default function PressPage() {
           For interview requests, quotes, and media enquiries:
         </p>
         <a
-          href="mailto:press@asavio.com"
+          href="mailto:press@asavio.app"
           className="text-black font-semibold text-lg hover:underline"
         >
-          press@asavio.com
+          press@asavio.app
         </a>
       </section>
     </div>

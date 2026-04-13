@@ -132,8 +132,8 @@ export default function CookiesPage() {
             <h2>Contact</h2>
             <p>
               For questions about our use of cookies, contact us at{" "}
-              <a href="mailto:privacy@asavio.com" className="text-black underline">
-                privacy@asavio.com
+              <a href="mailto:privacy@asavio.app" className="text-black underline">
+                privacy@asavio.app
               </a>
               .
             </p>

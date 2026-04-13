@@ -33,7 +33,7 @@ export default function TermsPage() {
             You must provide accurate, complete, and current information when
             creating an account. You are responsible for maintaining the
             confidentiality of your password and for all activity under your
-            account. Notify us immediately at hello@asavio.com if you suspect
+            account. Notify us immediately at hello@asavio.app if you suspect
             unauthorised access.
           </p>
 
@@ -179,8 +179,8 @@ export default function TermsPage() {
           <h2>15. Contact</h2>
           <p>
             For questions about these Terms, contact us at{" "}
-            <a href="mailto:legal@asavio.com" className="text-black underline">
-              legal@asavio.com
+            <a href="mailto:legal@asavio.app" className="text-black underline">
+              legal@asavio.app
             </a>
             .
           </p>

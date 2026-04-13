@@ -7,7 +7,7 @@ import LuxuryVehicles from "@/components/home/LuxuryVehicles";
 import ExperienceSection from "@/components/home/ExperienceSection";
 import CTASection from "@/components/home/CTASection";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://asavio.app";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
