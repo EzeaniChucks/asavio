@@ -19,6 +19,10 @@ import {
   FaCheckCircle,
   FaBed,
   FaMapMarkerAlt,
+  FaToggleOn,
+  FaToggleOff,
+  FaImages,
+  FaEdit,
 } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -51,6 +55,7 @@ export default function AdminHotelsPage() {
   const [rejectTarget, setRejectTarget] = useState<Hotel | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [galleryTarget, setGalleryTarget] = useState<Hotel | null>(null);
 
   const LIMIT = 20;
 
@@ -89,11 +94,24 @@ export default function AdminHotelsPage() {
   useEffect(() => { fetchHotels(); }, [fetchHotels]);
   useEffect(() => { setPage(1); }, [search, statusFilter]);
 
+  const toggleAvailability = async (h: Hotel) => {
+    setActionLoading(h.id + "-toggle");
+    try {
+      await api.patch(`/admin/hotels/${h.id}`, { isAvailable: !h.isAvailable });
+      toast.success(h.isAvailable ? `"${h.name}" archived` : `"${h.name}" restored`);
+      fetchHotels();
+    } catch {
+      // interceptor handles
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const approve = async (id: string) => {
     setActionLoading(id + "-approve");
     try {
-      await api.patch(`/admin/hotels/${id}`, { status: "approved" });
-      toast.success("Hotel approved and published");
+      await api.patch(`/admin/hotels/${id}`, { status: "approved", isAvailable: true });
+      toast.success("Hotel approved and is now live");
       fetchHotels();
     } catch {
       // interceptor handles
@@ -319,6 +337,48 @@ export default function AdminHotelsPage() {
                               Reject
                             </button>
                           )}
+                          {h.status === "approved" && (
+                            <button
+                              onClick={() => toggleAvailability(h)}
+                              disabled={actionLoading === h.id + "-toggle"}
+                              className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium disabled:opacity-40 transition ${
+                                h.isAvailable
+                                  ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                  : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                              }`}
+                            >
+                              {h.isAvailable ? (
+                                <><FaToggleOn className="text-emerald-500 text-sm" /> Archive</>
+                              ) : (
+                                <><FaToggleOff className="text-amber-500 text-sm" /> Restore</>
+                              )}
+                            </button>
+                          )}
+                          {h.images?.length > 0 && (
+                            <button
+                              onClick={() => setGalleryTarget(h)}
+                              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            >
+                              <FaImages className="text-[10px]" />
+                              Gallery ({h.images.length})
+                            </button>
+                          )}
+                          <Link
+                            href={`/dashboard/host/hotels/${h.id}/edit`}
+                            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            title="Edit hotel details"
+                          >
+                            <FaEdit className="text-[10px]" />
+                            Edit
+                          </Link>
+                          <Link
+                            href={`/dashboard/host/hotels/${h.id}/rooms`}
+                            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            title="Manage room types"
+                          >
+                            <FaBed className="text-[10px]" />
+                            Rooms
+                          </Link>
                           <Link
                             href={`/hotels/${h.id}`}
                             target="_blank"
@@ -439,6 +499,42 @@ export default function AdminHotelsPage() {
                 >
                   {actionLoading === deleteTarget + "-delete" ? "Deleting…" : "Delete"}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gallery modal */}
+      <AnimatePresence>
+        {galleryTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+            onClick={() => setGalleryTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-900">{galleryTarget.name} — Photos</h2>
+                <button onClick={() => setGalleryTarget(null)} className="text-gray-400 hover:text-black">
+                  <FaTimes />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {galleryTarget.images?.map((img, i) => (
+                  <div key={img.id || i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                    <Image src={img.url} alt={galleryTarget.name} fill className="object-cover" />
+                    {img.isPrimary && (
+                      <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>

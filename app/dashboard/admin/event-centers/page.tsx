@@ -16,6 +16,10 @@ import {
   FaCheck,
   FaTimes,
   FaMapMarkerAlt,
+  FaToggleOn,
+  FaToggleOff,
+  FaImages,
+  FaEdit,
 } from "react-icons/fa";
 import { MdMeetingRoom } from "react-icons/md";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,6 +53,7 @@ export default function AdminEventCentersPage() {
   const [rejectTarget, setRejectTarget] = useState<EventCenter | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [galleryTarget, setGalleryTarget] = useState<EventCenter | null>(null);
 
   const LIMIT = 20;
 
@@ -100,11 +105,24 @@ export default function AdminEventCentersPage() {
     setPage(1);
   }, [search, statusFilter]);
 
+  const toggleAvailability = async (ec: EventCenter) => {
+    setActionLoading(ec.id + "-toggle");
+    try {
+      await api.patch(`/admin/event-centers/${ec.id}`, { isAvailable: !ec.isAvailable });
+      toast.success(ec.isAvailable ? `"${ec.name}" archived` : `"${ec.name}" restored`);
+      fetchEventCenters();
+    } catch {
+      // interceptor handles
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const approve = async (id: string) => {
     setActionLoading(id + "-approve");
     try {
-      await api.patch(`/admin/event-centers/${id}`, { status: "approved" });
-      toast.success("Event center approved and published");
+      await api.patch(`/admin/event-centers/${id}`, { status: "approved", isAvailable: true });
+      toast.success("Event center approved and is now live");
       fetchEventCenters();
     } catch {
       // interceptor handles
@@ -320,6 +338,48 @@ export default function AdminEventCentersPage() {
                               Reject
                             </button>
                           )}
+                          {ec.status === "approved" && (
+                            <button
+                              onClick={() => toggleAvailability(ec)}
+                              disabled={actionLoading === ec.id + "-toggle"}
+                              className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium disabled:opacity-40 transition ${
+                                ec.isAvailable
+                                  ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                  : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                              }`}
+                            >
+                              {ec.isAvailable ? (
+                                <><FaToggleOn className="text-emerald-500 text-sm" /> Archive</>
+                              ) : (
+                                <><FaToggleOff className="text-amber-500 text-sm" /> Restore</>
+                              )}
+                            </button>
+                          )}
+                          {ec.images?.length > 0 && (
+                            <button
+                              onClick={() => setGalleryTarget(ec)}
+                              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            >
+                              <FaImages className="text-[10px]" />
+                              Gallery ({ec.images.length})
+                            </button>
+                          )}
+                          <Link
+                            href={`/dashboard/host/event-centers/${ec.id}/edit`}
+                            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            title="Edit venue details"
+                          >
+                            <FaEdit className="text-[10px]" />
+                            Edit
+                          </Link>
+                          <Link
+                            href={`/dashboard/host/event-centers/${ec.id}/spaces`}
+                            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                            title="Manage spaces"
+                          >
+                            <FaMapMarkerAlt className="text-[10px]" />
+                            Spaces
+                          </Link>
                           <Link
                             href={`/events/${ec.id}`}
                             target="_blank"
@@ -461,6 +521,42 @@ export default function AdminEventCentersPage() {
                     ? "Deleting\u2026"
                     : "Delete"}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gallery modal */}
+      <AnimatePresence>
+        {galleryTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+            onClick={() => setGalleryTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-900">{galleryTarget.name} — Photos</h2>
+                <button onClick={() => setGalleryTarget(null)} className="text-gray-400 hover:text-black">
+                  <FaTimes />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {galleryTarget.images?.map((img, i) => (
+                  <div key={img.id || i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                    <Image src={img.url} alt={galleryTarget.name} fill className="object-cover" />
+                    {img.isPrimary && (
+                      <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
