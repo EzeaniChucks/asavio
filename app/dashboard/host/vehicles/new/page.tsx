@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import KycGate from "@/components/guards/KycGate";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -132,6 +133,7 @@ export default function NewVehiclePage() {
 
         <h1 className="text-2xl font-bold text-gray-900 mb-6">List a vehicle</h1>
 
+        <KycGate listingNoun="vehicle">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Make + Model */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
@@ -442,6 +444,7 @@ export default function NewVehiclePage() {
             {isSubmitting ? "Publishing…" : "Publish vehicle"}
           </button>
         </form>
+        </KycGate>
       </div>
     </div>
   );

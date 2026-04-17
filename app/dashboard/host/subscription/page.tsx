@@ -265,6 +265,22 @@ function SubscriptionContent() {
                   </li>
                   <li className="flex items-center gap-2 text-gray-600">
                     <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                    {cfg.maxHotels == null || cfg.maxHotels === Infinity ? "Unlimited" : `Up to ${cfg.maxHotels}`} hotel listings
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-600">
+                    <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                    {cfg.maxRoomTypes == null || cfg.maxRoomTypes === Infinity ? "Unlimited" : `Up to ${cfg.maxRoomTypes}`} room types per hotel
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-600">
+                    <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                    {cfg.maxEventCenters == null || cfg.maxEventCenters === Infinity ? "Unlimited" : `Up to ${cfg.maxEventCenters}`} event venue listings
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-600">
+                    <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                    {cfg.maxEventSpaces == null || cfg.maxEventSpaces === Infinity ? "Unlimited" : `Up to ${cfg.maxEventSpaces}`} spaces per event venue
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-600">
+                    <FaCheck className="text-green-500 text-xs flex-shrink-0" />
                     {cfg.maxPhotos} photos per listing
                   </li>
                   <li className={`flex items-center gap-2 ${cfg.featureVideo ? "text-gray-600" : "text-gray-300"}`}>
@@ -343,6 +359,30 @@ function SubscriptionContent() {
                 starter={String(tierConfig.starter.maxVehicles)}
                 pro={String(tierConfig.pro.maxVehicles ?? "Unlimited")}
                 elite={tierConfig.elite.maxVehicles == null ? "Unlimited" : String(tierConfig.elite.maxVehicles)}
+              />
+              <FeatureRow
+                label="Hotel listings"
+                starter={String(tierConfig.starter.maxHotels)}
+                pro={String(tierConfig.pro.maxHotels ?? "Unlimited")}
+                elite={tierConfig.elite.maxHotels == null ? "Unlimited" : String(tierConfig.elite.maxHotels)}
+              />
+              <FeatureRow
+                label="Room types per hotel"
+                starter={String(tierConfig.starter.maxRoomTypes)}
+                pro={String(tierConfig.pro.maxRoomTypes ?? "Unlimited")}
+                elite={tierConfig.elite.maxRoomTypes == null ? "Unlimited" : String(tierConfig.elite.maxRoomTypes)}
+              />
+              <FeatureRow
+                label="Event venue listings"
+                starter={String(tierConfig.starter.maxEventCenters)}
+                pro={String(tierConfig.pro.maxEventCenters ?? "Unlimited")}
+                elite={tierConfig.elite.maxEventCenters == null ? "Unlimited" : String(tierConfig.elite.maxEventCenters)}
+              />
+              <FeatureRow
+                label="Spaces per event venue"
+                starter={String(tierConfig.starter.maxEventSpaces)}
+                pro={String(tierConfig.pro.maxEventSpaces ?? "Unlimited")}
+                elite={tierConfig.elite.maxEventSpaces == null ? "Unlimited" : String(tierConfig.elite.maxEventSpaces)}
               />
               <FeatureRow
                 label="Photos per listing"

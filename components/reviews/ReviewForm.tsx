@@ -11,11 +11,13 @@ import toast from "react-hot-toast";
 interface ReviewFormProps {
   propertyId?: string;
   vehicleId?: string;
+  hotelId?: string;
+  eventCenterId?: string;
   onSuccess: () => void;
   redirectTo?: string;
 }
 
-export default function ReviewForm({ propertyId, vehicleId, onSuccess, redirectTo }: ReviewFormProps) {
+export default function ReviewForm({ propertyId, vehicleId, hotelId, eventCenterId, onSuccess, redirectTo }: ReviewFormProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [rating, setRating] = useState(0);
@@ -34,7 +36,7 @@ export default function ReviewForm({ propertyId, vehicleId, onSuccess, redirectT
 
     setIsSubmitting(true);
     try {
-      await api.post("/reviews", { propertyId, vehicleId, rating, comment });
+      await api.post("/reviews", { propertyId, vehicleId, hotelId, eventCenterId, rating, comment });
       toast.success("Review submitted!");
       setRating(0);
       setComment("");

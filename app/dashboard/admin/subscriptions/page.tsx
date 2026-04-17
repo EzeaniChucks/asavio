@@ -103,7 +103,11 @@ export default function AdminSubscriptionsPage() {
       priceAnnual:  String(cfg.priceAnnual  ?? ""),
       maxProperties: cfg.maxProperties == null ? "" : String(cfg.maxProperties),
       maxVehicles:   cfg.maxVehicles   == null ? "" : String(cfg.maxVehicles),
-      maxPhotos:     String(cfg.maxPhotos ?? ""),
+      maxHotels:        cfg.maxHotels        == null ? "" : String(cfg.maxHotels),
+      maxRoomTypes:     cfg.maxRoomTypes     == null ? "" : String(cfg.maxRoomTypes),
+      maxEventCenters:  cfg.maxEventCenters  == null ? "" : String(cfg.maxEventCenters),
+      maxEventSpaces:   cfg.maxEventSpaces   == null ? "" : String(cfg.maxEventSpaces),
+      maxPhotos:        String(cfg.maxPhotos ?? ""),
       commissionRate: String(Math.round((cfg.commissionRate ?? 0) * 100)),
     });
     setEditingTier(tier);
@@ -118,7 +122,11 @@ export default function AdminSubscriptionsPage() {
       if (editForm.priceAnnual)   payload.priceAnnual   = Number(editForm.priceAnnual);
       if (editForm.maxProperties) payload.maxProperties = Number(editForm.maxProperties);
       if (editForm.maxVehicles)   payload.maxVehicles   = Number(editForm.maxVehicles);
-      if (editForm.maxPhotos)     payload.maxPhotos     = Number(editForm.maxPhotos);
+      if (editForm.maxHotels)        payload.maxHotels        = Number(editForm.maxHotels);
+      if (editForm.maxRoomTypes)     payload.maxRoomTypes     = Number(editForm.maxRoomTypes);
+      if (editForm.maxEventCenters)  payload.maxEventCenters  = Number(editForm.maxEventCenters);
+      if (editForm.maxEventSpaces)   payload.maxEventSpaces   = Number(editForm.maxEventSpaces);
+      if (editForm.maxPhotos)        payload.maxPhotos        = Number(editForm.maxPhotos);
       if (editForm.commissionRate) payload.commissionRate = Number(editForm.commissionRate) / 100;
 
       const res = await api.patch(`/subscriptions/admin/tier-config/${editingTier}`, payload);
@@ -285,12 +293,20 @@ export default function AdminSubscriptionsPage() {
                           { key: "priceAnnual",   label: "Annual price (₦)",     suffix: "" },
                           { key: "maxProperties", label: "Max properties",       suffix: "" },
                           { key: "maxVehicles",   label: "Max vehicles",         suffix: "" },
+                          { key: "maxHotels",        label: "Max hotels",             suffix: "" },
+                          { key: "maxRoomTypes",     label: "Max room types/hotel",  suffix: "" },
+                          { key: "maxEventCenters",  label: "Max event venues",      suffix: "" },
+                          { key: "maxEventSpaces",   label: "Max spaces/venue",      suffix: "" },
                           { key: "maxPhotos",     label: "Max photos/listing",   suffix: "" },
                           { key: "commissionRate", label: "Commission rate",      suffix: "%" },
                         ].map(({ key, label: fieldLabel, suffix }) => {
                           const rawVal = key === "commissionRate"
                             ? Math.round((cfg[key] ?? 0) * 100)
-                            : (cfg[key] ?? (key === "maxProperties" || key === "maxVehicles" ? "Unlimited" : "—"));
+                            : (cfg[key] ?? (
+                                key === "maxProperties" || key === "maxVehicles" || key === "maxHotels" || key === "maxRoomTypes" || key === "maxEventCenters" || key === "maxEventSpaces"
+                                  ? "Unlimited"
+                                  : "—"
+                              ));
 
                           return (
                             <div key={key} className="flex items-center justify-between text-xs">

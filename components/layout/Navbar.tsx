@@ -14,6 +14,8 @@ import CurrencyToggle from "@/components/ui/CurrencyToggle";
 const navLinks = [
   { href: "/properties", label: "Properties" },
   { href: "/vehicles", label: "Vehicles" },
+  { href: "/hotels", label: "Hotels" },
+  { href: "/events", label: "Events" },
 ];
 
 export default function Navbar() {

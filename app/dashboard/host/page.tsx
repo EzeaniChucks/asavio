@@ -22,10 +22,12 @@ import {
   FaCheckCircle,
   FaClock,
   FaExclamationTriangle,
+  FaCalendarAlt,
   FaCalendarTimes,
   FaCrown,
   FaUser,
   FaCar,
+  FaHotel,
 } from "react-icons/fa";
 import SubscriptionBadge from "@/components/ui/SubscriptionBadge";
 import { SubscriptionTier } from "@/types";
@@ -161,6 +163,20 @@ export default function HostDashboard() {
               <FaCar className="text-xs" />
               Add vehicle
             </Link>
+            <Link
+              href="/dashboard/host/hotels/new"
+              className="inline-flex items-center gap-2 btn-secondary text-sm"
+            >
+              <FaHotel className="text-xs" />
+              Add hotel
+            </Link>
+            <Link
+              href="/dashboard/host/event-centers/new"
+              className="inline-flex items-center gap-2 btn-secondary text-sm"
+            >
+              <FaCalendarAlt className="text-xs" />
+              Add venue
+            </Link>
           </div>
         </div>
 
@@ -189,6 +205,8 @@ export default function HostDashboard() {
           <span className="w-px h-5 bg-gray-200 mx-1 flex-shrink-0" />
 
           {[
+            { href: "/dashboard/host/hotels", icon: <FaHotel />, label: "Hotels" },
+            { href: "/dashboard/host/event-centers", icon: <FaCalendarAlt />, label: "Event Venues" },
             { href: "/dashboard/host/profile", icon: <FaUser />, label: "Profile" },
             { href: "/dashboard/host/availability", icon: <FaCalendarTimes />, label: "Availability" },
             { href: "/dashboard/host/earnings", icon: <FaMoneyBillWave />, label: "Earnings" },

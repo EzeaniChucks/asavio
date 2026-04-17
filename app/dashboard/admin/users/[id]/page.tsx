@@ -65,7 +65,7 @@ const STATUS_BADGE: Record<string, string> = {
   rejected: "bg-red-100 text-red-600",
 };
 
-type Tab = "properties" | "vehicles";
+type Tab = "properties" | "vehicles" | "hotels" | "event-centers";
 
 export default function AdminUserDetailPage() {
   const params = useParams();
@@ -76,6 +76,8 @@ export default function AdminUserDetailPage() {
   const [profile, setProfile]       = useState<User | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [vehicles, setVehicles]     = useState<Vehicle[]>([]);
+  const [hotels, setHotels]         = useState<any[]>([]);
+  const [eventCenters, setEventCenters] = useState<any[]>([]);
   const [isLoading, setIsLoading]   = useState(true);
   const [tab, setTab]               = useState<Tab>("properties");
 
@@ -110,12 +112,16 @@ export default function AdminUserDetailPage() {
 
   const fetchHostListings = useCallback(async () => {
     try {
-      const [propRes, vehRes] = await Promise.all([
+      const [propRes, vehRes, hotelRes, ecRes] = await Promise.all([
         api.get(`/admin/users/${userId}/properties`),
         api.get(`/admin/users/${userId}/vehicles`),
+        api.get(`/admin/users/${userId}/hotels`),
+        api.get(`/admin/users/${userId}/event-centers`),
       ]);
       setProperties(propRes.data.data.properties ?? []);
       setVehicles(vehRes.data.data.vehicles ?? []);
+      setHotels(hotelRes.data.data.hotels ?? []);
+      setEventCenters(ecRes.data.data.eventCenters ?? []);
     } catch {
       // interceptor handles
     }
@@ -426,6 +432,30 @@ export default function AdminUserDetailPage() {
                       Vehicles
                       <span className="ml-1 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{vehicles.length}</span>
                     </button>
+                    <button
+                      onClick={() => setTab("hotels")}
+                      className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors ${
+                        tab === "hotels"
+                          ? "border-b-2 border-black text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                      }`}
+                    >
+                      🏨
+                      Hotels
+                      <span className="ml-1 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{hotels.length}</span>
+                    </button>
+                    <button
+                      onClick={() => setTab("event-centers")}
+                      className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors ${
+                        tab === "event-centers"
+                          ? "border-b-2 border-black text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                      }`}
+                    >
+                      🎪
+                      Events
+                      <span className="ml-1 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{eventCenters.length}</span>
+                    </button>
                   </div>
 
                   {/* Properties tab */}
@@ -529,6 +559,111 @@ export default function AdminUserDetailPage() {
                               </Link>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Event Centers tab */}
+                  {tab === "event-centers" && (
+                    <div>
+                      {eventCenters.length === 0 ? (
+                        <div className="p-10 text-center text-gray-400 text-sm">No event venues.</div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {eventCenters.map((ec: any) => {
+                            const primaryImg = ec.images?.find((i: any) => i.isPrimary)?.url ?? ec.images?.[0]?.url;
+                            return (
+                              <div key={ec.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                                <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                                  {primaryImg ? (
+                                    <img src={primaryImg} alt={ec.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xl">🎪</div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{ec.name}</p>
+                                  <p className="text-xs text-gray-400 truncate">
+                                    {ec.location?.city}, {ec.location?.state}
+                                    {ec.spaces?.length ? ` · ${ec.spaces.length} space${ec.spaces.length === 1 ? "" : "s"}` : ""}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[ec.status] ?? "bg-gray-100 text-gray-500"}`}>
+                                      {ec.status}
+                                    </span>
+                                  </div>
+                                </div>
+                                <Link
+                                  href={`/events/${ec.id}`}
+                                  target="_blank"
+                                  className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition flex-shrink-0"
+                                  title="View listing"
+                                >
+                                  <FaExternalLinkAlt className="text-xs" />
+                                </Link>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Hotels tab */}
+                  {tab === "hotels" && (
+                    <div>
+                      {hotels.length === 0 ? (
+                        <div className="p-10 text-center text-gray-400 text-sm">No hotels.</div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {hotels.map((h: any) => {
+                            const primaryImg = h.images?.find((i: any) => i.isPrimary)?.url ?? h.images?.[0]?.url;
+                            const cheapest = (h.roomTypes ?? [])
+                              .map((r: any) => Number(r.pricePerNight))
+                              .filter((n: number) => Number.isFinite(n) && n > 0)
+                              .sort((a: number, b: number) => a - b)[0];
+                            return (
+                              <div key={h.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                                <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                                  {primaryImg ? (
+                                    <img src={primaryImg} alt={h.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xl">🏨</div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{h.name}</p>
+                                  <p className="text-xs text-gray-400 truncate">
+                                    {h.location?.city}, {h.location?.state}
+                                    {cheapest ? ` · From ${formatPrice(cheapest)}/night` : ""}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[h.status] ?? "bg-gray-100 text-gray-500"}`}>
+                                      {h.status}
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                      {h.roomTypes?.length ?? 0} room {h.roomTypes?.length === 1 ? "type" : "types"}
+                                    </span>
+                                    {h.totalReviews > 0 && (
+                                      <span className="flex items-center gap-0.5 text-xs text-gray-400">
+                                        <FaStar className="text-yellow-400 text-[10px]" />
+                                        {Number(h.averageRating).toFixed(1)} ({h.totalReviews})
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Link
+                                  href={`/hotels/${h.id}`}
+                                  target="_blank"
+                                  className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition flex-shrink-0"
+                                  title="View listing"
+                                >
+                                  <FaExternalLinkAlt className="text-xs" />
+                                </Link>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

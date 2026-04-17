@@ -4,6 +4,8 @@ import Hero from "@/components/home/Hero";
 import FeaturedProperties from "@/components/home/FeaturedProperties";
 import Categories from "@/components/home/Categories";
 import LuxuryVehicles from "@/components/home/LuxuryVehicles";
+import FeaturedHotels from "@/components/home/FeaturedHotels";
+import FeaturedEventCenters from "@/components/home/FeaturedEventCenters";
 import ExperienceSection from "@/components/home/ExperienceSection";
 import CTASection from "@/components/home/CTASection";
 
@@ -64,6 +66,8 @@ export default function Home() {
         <div className="overflow-hidden">
           <Categories />
           <FeaturedProperties />
+          <FeaturedHotels />
+          <FeaturedEventCenters />
           <LuxuryVehicles />
           <ExperienceSection />
           <CTASection />

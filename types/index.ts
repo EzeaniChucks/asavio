@@ -32,6 +32,10 @@ export interface TierConfig {
   label: string;
   maxProperties: number;
   maxVehicles: number;
+  maxHotels: number;
+  maxRoomTypes: number;
+  maxEventCenters: number;
+  maxEventSpaces: number;
   maxPhotos: number;
   featureVideo: boolean;
   videoMaxSeconds: number;
@@ -128,6 +132,10 @@ export interface Conversation {
   property?: Property | null;
   vehicleId: string | null;
   vehicle?: Vehicle | null;
+  hotelId?: string | null;
+  hotel?: Hotel | null;
+  eventCenterId?: string | null;
+  eventCenter?: EventCenter | null;
   lastMessageAt: string | null;
   lastMessagePreview: string | null;
   createdAt: string;
@@ -173,6 +181,172 @@ export interface Property {
   updatedAt: string;
 }
 
+// ── Hotels ──────────────────────────────────────────────────────────
+
+export interface HotelImage {
+  id: string;
+  url: string;
+  publicId: string;
+  altText?: string;
+  isPrimary: boolean;
+}
+
+export interface RoomType {
+  id: string;
+  hotelId: string;
+  name: string;
+  description?: string | null;
+  pricePerNight: number;
+  maxGuests: number;
+  totalUnits: number;
+  bedType?: string;
+  roomSize?: string;
+  roomAmenities: string[];
+  cautionFee?: number | null;
+  images: HotelImage[];
+  /** Only present on availability-check responses */
+  available?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Hotel {
+  id: string;
+  name: string;
+  description: string;
+  hotelType: string;
+  starRating?: number | null;
+  verifiedStarRating: boolean;
+  location: {
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  amenities: string[];
+  nearbyPlaces?: string[] | null;
+  checkInTime: string;
+  checkOutTime: string;
+  cancellationPolicy: string;
+  checkInInstructions?: string;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
+  isAvailable: boolean;
+  averageRating: number;
+  totalReviews: number;
+  viewCount: number;
+  featureVideoUrl?: string | null;
+  featureVideoPublicId?: string | null;
+  host: User;
+  hostId: string;
+  images: HotelImage[];
+  roomTypes: RoomType[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Event Centers ───────────────────────────────────────────────
+
+export interface EventCenterImage {
+  id: string;
+  url: string;
+  publicId: string;
+  altText?: string;
+  isPrimary: boolean;
+}
+
+export interface EventSpace {
+  id: string;
+  eventCenterId: string;
+  name: string;
+  description?: string | null;
+  capacity: number;
+  pricingMode: "hourly" | "daily" | "package" | "hybrid";
+  hourlyRate?: number | null;
+  minHours: number;
+  dailyRate?: number | null;
+  packageName?: string | null;
+  packageRate?: number | null;
+  packageHoursIncluded?: number | null;
+  packageDescription?: string | null;
+  setupMinutes: number;
+  teardownMinutes: number;
+  images: EventCenterImage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventCenter {
+  id: string;
+  name: string;
+  description: string;
+  location: {
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  amenities: string[];
+  nearbyPlaces?: string[] | null;
+  allowedEventTypes: string[];
+  blockedEventTypes: string[];
+  cancellationPolicy: string;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
+  isAvailable: boolean;
+  averageRating: number;
+  totalReviews: number;
+  viewCount: number;
+  featureVideoUrl?: string | null;
+  featureVideoPublicId?: string | null;
+  host: User;
+  hostId: string;
+  images: EventCenterImage[];
+  spaces: EventSpace[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventBooking {
+  id: string;
+  userId: string;
+  user?: User;
+  eventCenterId: string;
+  eventCenter?: EventCenter;
+  eventSpaceId: string;
+  eventSpace?: EventSpace;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  eventType: string;
+  attendeeCount: number;
+  pricingUsed: "hourly" | "daily" | "package";
+  totalPrice: number;
+  platformCommission: number;
+  hostPayout: number;
+  appliedCommissionRate?: number | null;
+  currency?: string;
+  status: "awaiting_payment" | "confirmed" | "cancelled" | "completed";
+  paymentMethod: string;
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  hostPayoutStatus: "pending" | "processing" | "transferred" | "failed";
+  paystackReference?: string;
+  payoutReference?: string;
+  specialRequests?: string | null;
+  refundedAmount?: number | null;
+  cancelledAt?: string | null;
+  cancelledBy?: "guest" | "host" | "admin" | null;
+  cancellationReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Review {
   id: string;
   rating: number;
@@ -181,6 +355,8 @@ export interface Review {
   userId: string;
   propertyId?: string;
   vehicleId?: string;
+  hotelId?: string | null;
+  eventCenterId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -216,6 +392,13 @@ export interface Booking {
   vehicle?: Vehicle;
   travelScope?: "local" | "interstate" | null;
   destination?: string | null;
+  // ── Hotel booking fields (nullable for non-hotel bookings) ────────
+  hotel?: Hotel | null;
+  hotelId?: string | null;
+  roomType?: RoomType | null;
+  roomTypeId?: string | null;
+  /** Number of rooms booked (defaults to 1 for non-hotel bookings) */
+  quantity?: number;
   createdAt: string;
   updatedAt: string;
 }

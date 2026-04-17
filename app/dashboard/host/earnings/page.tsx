@@ -249,12 +249,19 @@ export default function HostEarningsPage() {
                         <span className="mt-0.5">{BOOKING_STATUS_ICON[booking.status]}</span>
                         <div className="min-w-0">
                           <p className="font-semibold text-gray-900 truncate">
-                            {booking.property?.title ?? "Property"}
+                            {booking.property?.title
+                              ?? booking.hotel?.name
+                              ?? (booking.vehicle ? `${booking.vehicle.year} ${booking.vehicle.make} ${booking.vehicle.model}` : "Listing")}
+                            {booking.roomType && (
+                              <span className="text-xs text-gray-400 font-normal ml-1">
+                                ({booking.quantity ?? 1} × {booking.roomType.name})
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-gray-400">
                             {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
                             {" · "}
-                            {nights} {nights === 1 ? "night" : "nights"}
+                            {nights} {nights === 1 ? (booking.vehicle ? "day" : "night") : (booking.vehicle ? "days" : "nights")}
                             {" · "}
                             {booking.guests} {booking.guests === 1 ? "guest" : "guests"}
                           </p>

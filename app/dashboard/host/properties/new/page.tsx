@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import PropertyForm, { PropertyFormData } from "@/components/forms/PropertyForm";
+import KycGate from "@/components/guards/KycGate";
 import { api } from "@/lib/api";
 import { SubscriptionTier } from "@/types";
 import toast from "react-hot-toast";
@@ -68,21 +69,23 @@ export default function NewPropertyPage() {
           Back to dashboard
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            Create a new listing
-          </h1>
-          <p className="text-gray-500 mb-8">
-            Fill in your property details to get started.
-          </p>
+        <KycGate listingNoun="property">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Create a new listing
+            </h1>
+            <p className="text-gray-500 mb-8">
+              Fill in your property details to get started.
+            </p>
 
-          <PropertyForm
-            onSubmit={handleSubmit}
-            submitLabel="Create listing"
-            isLoading={isLoading}
-            maxPhotos={PHOTO_LIMITS[subscriptionTier]}
-          />
-        </div>
+            <PropertyForm
+              onSubmit={handleSubmit}
+              submitLabel="Create listing"
+              isLoading={isLoading}
+              maxPhotos={PHOTO_LIMITS[subscriptionTier]}
+            />
+          </div>
+        </KycGate>
       </div>
     </div>
   );

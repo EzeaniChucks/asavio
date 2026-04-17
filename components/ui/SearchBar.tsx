@@ -13,8 +13,18 @@ import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
+type Category = "properties" | "vehicles" | "hotels" | "events";
+
+const CATEGORIES: { value: Category; label: string; icon: string }[] = [
+  { value: "properties", label: "Shortlets",  icon: "🏠" },
+  { value: "vehicles",   label: "Vehicles",   icon: "🚗" },
+  { value: "hotels",     label: "Hotels",     icon: "🏨" },
+  { value: "events",     label: "Venues",     icon: "🎪" },
+];
+
 export default function SearchBar() {
   const router = useRouter();
+  const [category, setCategory] = useState<Category>("properties");
   const [location, setLocation] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({
@@ -26,12 +36,12 @@ export default function SearchBar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams({
-      location,
-      guests: guests.toString(),
-      startDate: dateRange.startDate.toISOString(),
-      endDate: dateRange.endDate.toISOString(),
-    });
+    const params = new URLSearchParams();
+    if (location) params.set("location", location);
+    params.set("guests", guests.toString());
+    params.set("startDate", dateRange.startDate.toISOString());
+    params.set("endDate", dateRange.endDate.toISOString());
+    params.set("category", category);
     router.push(`/search?${params.toString()}`);
   };
 
@@ -43,6 +53,25 @@ export default function SearchBar() {
 
   return (
     <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto">
+      {/* Category tabs */}
+      <div className="flex justify-center gap-1 mb-3">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setCategory(c.value)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              category === c.value
+                ? "bg-white text-gray-900 shadow-md"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <span className="mr-1.5">{c.icon}</span>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Desktop: single pill row ── */}
       <div className="hidden md:flex bg-white rounded-full shadow-2xl overflow-visible">
         {/* Location */}

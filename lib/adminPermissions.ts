@@ -5,6 +5,8 @@ export const ADMIN_PERMISSIONS = {
   MANAGE_USERS:       "manage_users",
   MANAGE_PROPERTIES:  "manage_properties",
   MANAGE_VEHICLES:    "manage_vehicles",
+  MANAGE_HOTELS:      "manage_hotels",
+  MANAGE_EVENT_CENTERS: "manage_event_centers",
   MANAGE_BOOKINGS:    "manage_bookings",
   MANAGE_PAYOUTS:     "manage_payouts",
   MANAGE_REVIEWS:     "manage_reviews",
