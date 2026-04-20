@@ -302,13 +302,15 @@ export default function HotelBookingWidget({ hotel }: Props) {
       </div>
 
       {/* Room selector */}
-      {checkIn && checkOut && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-            <FaBed className="inline mr-1 text-gray-400 text-[10px]" />
-            Choose a room type
-          </p>
-          {isChecking ? (
+      <div className="mb-4">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+          <FaBed className="inline mr-1 text-gray-400 text-[10px]" />
+          {checkIn && checkOut ? "Choose a room type" : "Available rooms"}
+        </p>
+
+        {checkIn && checkOut ? (
+          /* ── Live availability (dates selected) ── */
+          isChecking ? (
             <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-400">
               Checking availability…
             </div>
@@ -362,9 +364,43 @@ export default function HotelBookingWidget({ hotel }: Props) {
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
+          )
+        ) : (
+          /* ── Static preview (no dates yet) ── */
+          (hotel.roomTypes ?? []).length > 0 ? (
+            <div className="space-y-2">
+              {(hotel.roomTypes ?? []).map((room) => (
+                <div
+                  key={room.id}
+                  className="w-full text-left p-3 rounded-xl border border-gray-100 bg-gray-50/30"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900">{room.name}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 mt-0.5">
+                        <span>Sleeps {room.maxGuests}</span>
+                        {room.bedType && <span className="capitalize">{room.bedType}</span>}
+                        {room.roomSize && <span>{room.roomSize}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-sm text-gray-900">
+                        {showUsd && toUsd(room.pricePerNight)
+                          ? toUsd(room.pricePerNight)
+                          : formatPrice(room.pricePerNight)}
+                      </p>
+                      <p className="text-[10px] text-gray-400">/ night</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Select dates above to check availability and book
+              </p>
+            </div>
+          ) : null
+        )}
+      </div>
 
       {/* Quantity */}
       {selectedRoom && (
